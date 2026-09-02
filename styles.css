@@ -1,0 +1,128 @@
+:root {
+  --bg: #f6f1ea;
+  --ink: #1c1917;
+  --muted: #57534e;
+  --card: #fffaf4;
+  --accent: #b45309;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.site-header,
+main,
+footer {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.logo {
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+
+nav {
+  display: flex;
+  gap: 1rem;
+}
+
+nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+nav a:hover {
+  color: var(--ink);
+}
+
+.hero {
+  padding: 3rem 0 2rem;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.8rem;
+  color: var(--accent);
+  margin: 0 0 0.75rem;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  margin: 0 0 1rem;
+}
+
+.lede {
+  max-width: 38rem;
+  color: var(--muted);
+  font-size: 1.125rem;
+}
+
+.button {
+  display: inline-block;
+  margin-top: 1.25rem;
+  padding: 0.7rem 1.1rem;
+  background: var(--ink);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 999px;
+}
+
+.products h2,
+#about h2,
+#contact h2 {
+  margin-top: 2.5rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid #e7e0d6;
+  border-radius: 1rem;
+  padding: 1.25rem;
+}
+
+.price {
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+footer {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
