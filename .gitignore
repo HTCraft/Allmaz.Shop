@@ -1,8 +1,30 @@
-.DS_Store
-Thumbs.db
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Prisma
+packages/database/prisma/generated/
+
+# Logs
+npm-debug.log*
 *.log
+
+# IDE
 .vscode/
 .idea/
-node_modules/
-.env
-.env.*
+
+# OS
+.DS_Store
+Thumbs.db

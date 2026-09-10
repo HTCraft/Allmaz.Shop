@@ -1,0 +1,80 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export interface ProductImage {
+  id: string;
+  url: string;
+  alt: string | null;
+  position: number;
+}
+
+export interface Product {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  priceCents: number;
+  sku: string;
+  stock: number;
+  category: Category | null;
+  images: ProductImage[];
+}
+
+export interface ProductListResponse {
+  items: Product[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface ProductListParams {
+  page?: number;
+  category?: string;
+  search?: string;
+  sort?: 'newest' | 'price_asc' | 'price_desc';
+}
+
+export async function getCategories(): Promise<Category[]> {
+  const res = await fetch(`${API_URL}/categories`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Не удалось загрузить категории');
+  return res.json();
+}
+
+export async function getProducts(
+  params: ProductListParams = {},
+): Promise<ProductListResponse> {
+  const searchParams = new URLSearchParams();
+  if (params.page) searchParams.set('page', String(params.page));
+  if (params.category) searchParams.set('category', params.category);
+  if (params.search) searchParams.set('search', params.search);
+  if (params.sort) searchParams.set('sort', params.sort);
+
+  const res = await fetch(`${API_URL}/products?${searchParams.toString()}`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error('Не удалось загрузить товары');
+  return res.json();
+}
+
+export async function getProductBySlug(slug: string): Promise<Product | null> {
+  const res = await fetch(`${API_URL}/products/${slug}`, { cache: 'no-store' });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error('Не удалось загрузить товар');
+  return res.json();
+}
+
+export function formatPrice(cents: number): string {
+  return new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency: 'RUB',
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
+}
