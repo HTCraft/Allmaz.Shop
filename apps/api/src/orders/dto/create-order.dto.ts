@@ -1,0 +1,15 @@
+import { IsOptional, IsString, MinLength } from 'class-validator';
+
+export class CreateOrderDto {
+  @IsString()
+  @MinLength(5, { message: 'Укажите полный адрес доставки' })
+  shippingAddress!: string;
+
+  @IsString()
+  @MinLength(5, { message: 'Укажите корректный телефон' })
+  phone!: string;
+
+  @IsOptional()
+  @IsString()
+  comment?: string;
+}

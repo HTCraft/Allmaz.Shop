@@ -94,9 +94,21 @@ export default async function AdminLayout({
                     </Link>
                   </li>
                   <li className="nav-item">
+                    <Link href="/admin/orders" className="nav-link">
+                      <i className="nav-icon bi bi-receipt" />
+                      <p>Заказы</p>
+                    </Link>
+                  </li>
+                  <li className="nav-item">
                     <Link href="/admin/categories" className="nav-link">
                       <i className="nav-icon bi bi-tags" />
                       <p>Категории</p>
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link href="/admin/carousel" className="nav-link">
+                      <i className="nav-icon bi bi-images" />
+                      <p>Карусель на главной</p>
                     </Link>
                   </li>
                   <li className="nav-item">

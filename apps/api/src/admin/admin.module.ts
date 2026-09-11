@@ -7,6 +7,10 @@ import { AdminUsersController } from './users/admin-users.controller';
 import { AdminUsersService } from './users/admin-users.service';
 import { AdminStatsController } from './admin-stats.controller';
 import { AdminStatsService } from './admin-stats.service';
+import { AdminCarouselController } from './carousel/admin-carousel.controller';
+import { AdminCarouselService } from './carousel/admin-carousel.service';
+import { AdminOrdersController } from './orders/admin-orders.controller';
+import { AdminOrdersService } from './orders/admin-orders.service';
 
 @Module({
   controllers: [
@@ -14,12 +18,16 @@ import { AdminStatsService } from './admin-stats.service';
     AdminCategoriesController,
     AdminUsersController,
     AdminStatsController,
+    AdminCarouselController,
+    AdminOrdersController,
   ],
   providers: [
     AdminProductsService,
     AdminCategoriesService,
     AdminUsersService,
     AdminStatsService,
+    AdminCarouselService,
+    AdminOrdersService,
   ],
 })
 export class AdminModule {}

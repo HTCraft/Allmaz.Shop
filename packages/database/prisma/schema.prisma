@@ -60,21 +60,22 @@ model Category {
 }
 
 model Product {
-  id          String         @id @default(cuid())
-  title       String
-  slug        String         @unique
-  description String?
-  priceCents  Int
-  sku         String         @unique
-  stock       Int            @default(0)
-  category    Category?      @relation(fields: [categoryId], references: [id])
-  categoryId  String?
-  images      ProductImage[]
-  orderItems  OrderItem[]
-  cartItems   CartItem[]
-  favorites   Favorite[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id             String          @id @default(cuid())
+  title          String
+  slug           String          @unique
+  description    String?
+  priceCents     Int
+  sku            String          @unique
+  stock          Int             @default(0)
+  category       Category?       @relation(fields: [categoryId], references: [id])
+  categoryId     String?
+  images         ProductImage[]
+  orderItems     OrderItem[]
+  cartItems      CartItem[]
+  favorites      Favorite[]
+  carouselSlides CarouselSlide[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 }
 
 model ProductImage {
@@ -87,23 +88,29 @@ model ProductImage {
 }
 
 model Order {
-  id        String      @id @default(cuid())
-  user      User        @relation(fields: [userId], references: [id])
-  userId    String
-  status    OrderStatus @default(PENDING)
-  items     OrderItem[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id              String      @id @default(cuid())
+  user            User        @relation(fields: [userId], references: [id])
+  userId          String
+  status          OrderStatus @default(PENDING)
+  shippingAddress String
+  phone           String
+  comment         String?
+  totalCents      Int
+  items           OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
-  order     Order   @relation(fields: [orderId], references: [id])
-  orderId   String
-  product   Product @relation(fields: [productId], references: [id])
-  productId String
-  quantity  Int     @default(1)
-  priceCents Int
+  id           String  @id @default(cuid())
+  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId      String
+  product      Product @relation(fields: [productId], references: [id])
+  productId    String
+  productTitle String // снимок названия на момент заказа — переживает удаление товара
+  productSku   String // снимок артикула на момент заказа
+  quantity     Int     @default(1)
+  priceCents   Int // снимок цены за единицу на момент заказа
 }
 
 enum OrderStatus {
@@ -145,4 +152,26 @@ model Favorite {
   createdAt DateTime @default(now())
 
   @@unique([userId, productId])
+}
+
+model CarouselSlide {
+  id        String   @id @default(cuid())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  position  Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId])
+}
+
+/** Единственная запись (id всегда "singleton") с глобальными настройками карусели на главной */
+model CarouselSettings {
+  id             String   @id @default("singleton")
+  autoplay       Boolean  @default(true)
+  intervalMs     Int      @default(5000)
+  showIndicators Boolean  @default(true)
+  showControls   Boolean  @default(true)
+  updatedAt      DateTime @updatedAt
 }

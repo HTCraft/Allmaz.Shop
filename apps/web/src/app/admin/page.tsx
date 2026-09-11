@@ -14,6 +14,7 @@ export default async function AdminDashboardPage() {
     { label: 'Товаров', value: stats.productsCount, href: '/admin/products', icon: 'bi-box-seam', color: 'primary' },
     { label: 'Категорий', value: stats.categoriesCount, href: '/admin/categories', icon: 'bi-tags', color: 'success' },
     { label: 'Пользователей', value: stats.usersCount, href: '/admin/users', icon: 'bi-people', color: 'info' },
+    { label: 'Новых заказов', value: stats.pendingOrdersCount, href: '/admin/orders', icon: 'bi-receipt', color: 'warning' },
     { label: 'Нет в наличии', value: stats.outOfStockCount, href: '/admin/products', icon: 'bi-exclamation-triangle', color: 'danger' },
   ];
 

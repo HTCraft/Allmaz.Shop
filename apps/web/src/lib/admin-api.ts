@@ -1,4 +1,18 @@
+import type { OrderStatus, OrderItemData } from './orders-api';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+
+export interface AdminOrder {
+  id: string;
+  status: OrderStatus;
+  shippingAddress: string;
+  phone: string;
+  comment: string | null;
+  totalCents: number;
+  items: OrderItemData[];
+  user: { id: string; email: string; name: string | null };
+  createdAt: string;
+}
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
@@ -53,6 +67,7 @@ export interface AdminStats {
   categoriesCount: number;
   usersCount: number;
   outOfStockCount: number;
+  pendingOrdersCount: number;
 }
 
 export interface ProductFormInput {
@@ -64,6 +79,25 @@ export interface ProductFormInput {
   stock: number;
   categoryId?: string;
   images?: string[];
+}
+
+export interface AdminCarouselSettings {
+  autoplay: boolean;
+  intervalMs: number;
+  showIndicators: boolean;
+  showControls: boolean;
+}
+
+export interface AdminCarouselSlide {
+  id: string;
+  position: number;
+  active: boolean;
+  productId: string;
+  product: {
+    id: string;
+    title: string;
+    images: { url: string }[];
+  };
 }
 
 export const adminApi = {
@@ -108,6 +142,36 @@ export const adminApi = {
       body: JSON.stringify({ role }),
     }),
   deleteUser: (id: string) => request(`/admin/users/${id}`, { method: 'DELETE' }),
+
+  // Карусель
+  getCarouselSettings: () => request<AdminCarouselSettings>('/admin/carousel/settings'),
+  updateCarouselSettings: (data: Partial<AdminCarouselSettings>) =>
+    request<AdminCarouselSettings>('/admin/carousel/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  listCarouselSlides: () => request<AdminCarouselSlide[]>('/admin/carousel/slides'),
+  createCarouselSlide: (data: { productId: string; position?: number; active?: boolean }) =>
+    request<AdminCarouselSlide>('/admin/carousel/slides', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateCarouselSlide: (id: string, data: { position?: number; active?: boolean }) =>
+    request<AdminCarouselSlide>(`/admin/carousel/slides/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteCarouselSlide: (id: string) =>
+    request(`/admin/carousel/slides/${id}`, { method: 'DELETE' }),
+
+  // Заказы
+  listOrders: () => request<AdminOrder[]>('/admin/orders'),
+  getOrder: (id: string) => request<AdminOrder>(`/admin/orders/${id}`),
+  updateOrderStatus: (id: string, status: OrderStatus) =>
+    request<AdminOrder>(`/admin/orders/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    }),
 };
 
 export function formatPriceInput(cents: number): string {

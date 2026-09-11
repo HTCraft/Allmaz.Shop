@@ -158,9 +158,9 @@ export default function CartPage() {
       <div className="d-flex justify-content-end">
         <div className="text-end">
           <p className="fs-4 fw-bold mb-2">Итого: {formatPrice(cart.totalCents)}</p>
-          <button className="btn btn-success btn-lg" disabled title="Будет реализовано на следующем шаге">
+          <Link href="/checkout" className="btn btn-success btn-lg">
             Оформить заказ
-          </button>
+          </Link>
         </div>
       </div>
     </main>

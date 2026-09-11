@@ -26,6 +26,9 @@ export default function AuthNav() {
         <Link href="/cart" className="nav-link text-light">
           Корзина
         </Link>
+        <Link href="/orders" className="nav-link text-light">
+          Мои заказы
+        </Link>
         <span className="text-light small">{user.name || user.email}</span>
         <button
           type="button"
