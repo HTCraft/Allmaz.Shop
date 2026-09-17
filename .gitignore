@@ -17,6 +17,10 @@ out/
 # Prisma
 packages/database/prisma/generated/
 
+# Загруженные файлы товаров (изображения/видео) — хранятся на диске сервера,
+# не в git; папка создаётся автоматически при старте API
+apps/api/uploads/
+
 # Logs
 npm-debug.log*
 *.log

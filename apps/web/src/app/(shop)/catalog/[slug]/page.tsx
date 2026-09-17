@@ -4,6 +4,7 @@ import { getProductBySlug, formatPrice } from '../../../../lib/catalog-api';
 import { serverFetch, isAuthenticated } from '../../../../lib/server-fetch';
 import AddToCartButton from '../../../../components/AddToCartButton';
 import FavoriteButton from '../../../../components/FavoriteButton';
+import ProductGallery from '../../../../components/ProductGallery';
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -26,8 +27,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
     }
   }
 
-  const mainImage = product.images[0];
-
   return (
     <main className="py-4">
       <nav aria-label="breadcrumb">
@@ -48,26 +47,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
       <div className="row g-4">
         <div className="col-md-6">
-          <img
-            src={mainImage?.url ?? 'https://via.placeholder.com/600x600?text=No+Image'}
-            alt={mainImage?.alt ?? product.title}
-            className="img-fluid rounded shadow-sm mb-3"
-            style={{ aspectRatio: '1 / 1', objectFit: 'cover', width: '100%' }}
-          />
-          {product.images.length > 1 && (
-            <div className="d-flex gap-2 flex-wrap">
-              {product.images.map((img) => (
-                <img
-                  key={img.id}
-                  src={img.url}
-                  alt={img.alt ?? product.title}
-                  width={80}
-                  height={80}
-                  style={{ objectFit: 'cover', borderRadius: 6 }}
-                />
-              ))}
-            </div>
-          )}
+          <ProductGallery media={product.media} title={product.title} />
         </div>
 
         <div className="col-md-6">

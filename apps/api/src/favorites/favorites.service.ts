@@ -1,5 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@ecommerce/database';
+import { resolveMediaUrl } from '../media/resolve-media-url';
+
+const MEDIA_SELECT = {
+  id: true,
+  type: true,
+  url: true,
+  alt: true,
+  position: true,
+} as const;
 
 @Injectable()
 export class FavoritesService {
@@ -10,13 +19,16 @@ export class FavoritesService {
         product: {
           include: {
             category: true,
-            images: { orderBy: { position: 'asc' }, take: 1 },
+            media: { orderBy: { position: 'asc' }, select: MEDIA_SELECT },
           },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
-    return favorites.map((f) => f.product);
+    return favorites.map((f) => ({
+      ...f.product,
+      media: f.product.media.map((m) => ({ ...m, url: resolveMediaUrl(m) })),
+    }));
   }
 
   /** Возвращает id всех избранных товаров пользователя — удобно для отметок в каталоге */

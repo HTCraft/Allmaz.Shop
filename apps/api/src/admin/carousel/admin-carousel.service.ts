@@ -5,6 +5,19 @@ import {
   UpdateCarouselSettingsDto,
   UpdateCarouselSlideDto,
 } from '../dto/carousel.dto';
+import { resolveMediaUrl } from '../../media/resolve-media-url';
+
+function withResolvedSlide<
+  T extends { product: { media: Array<{ id: string; url: string }> } },
+>(slide: T) {
+  return {
+    ...slide,
+    product: {
+      ...slide.product,
+      media: slide.product.media.map((m) => ({ ...m, url: resolveMediaUrl(m) })),
+    },
+  };
+}
 
 @Injectable()
 export class AdminCarouselService {
@@ -25,14 +38,15 @@ export class AdminCarouselService {
   }
 
   async listSlides() {
-    return prisma.carouselSlide.findMany({
+    const slides = await prisma.carouselSlide.findMany({
       orderBy: { position: 'asc' },
       include: {
         product: {
-          include: { images: { orderBy: { position: 'asc' }, take: 1 } },
+          include: { media: { where: { type: "IMAGE" }, orderBy: { position: "asc" }, take: 1, select: { id: true, url: true } } },
         },
       },
     });
+    return slides.map(withResolvedSlide);
   }
 
   async createSlide(dto: CreateCarouselSlideDto) {
@@ -50,25 +64,27 @@ export class AdminCarouselService {
       _max: { position: true },
     });
 
-    return prisma.carouselSlide.create({
+    const slide = await prisma.carouselSlide.create({
       data: {
         productId: dto.productId,
         position: dto.position ?? (maxPosition._max.position ?? -1) + 1,
         active: dto.active ?? true,
       },
-      include: { product: { include: { images: true } } },
+      include: { product: { include: { media: { where: { type: "IMAGE" }, take: 1, select: { id: true, url: true } } } } },
     });
+    return withResolvedSlide(slide);
   }
 
   async updateSlide(id: string, dto: UpdateCarouselSlideDto) {
     const slide = await prisma.carouselSlide.findUnique({ where: { id } });
     if (!slide) throw new NotFoundException('Слайд не найден');
 
-    return prisma.carouselSlide.update({
+    const updated = await prisma.carouselSlide.update({
       where: { id },
       data: dto,
-      include: { product: { include: { images: true } } },
+      include: { product: { include: { media: { where: { type: "IMAGE" }, take: 1, select: { id: true, url: true } } } } },
     });
+    return withResolvedSlide(updated);
   }
 
   async removeSlide(id: string) {

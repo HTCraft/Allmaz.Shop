@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  Patch,
   Post,
   Req,
   Res,
@@ -16,6 +17,8 @@ import { RestorePasswordDto } from './dto/restore-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 const COOKIE_NAME = 'access_token';
@@ -53,6 +56,27 @@ export class AuthController {
   @Get('me')
   me(@Req() req: Request & { user: { userId: string } }) {
     return this.authService.me(req.user.userId);
+  }
+
+  /** Обновление профиля (личный кабинет) */
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile')
+  updateProfile(
+    @Req() req: Request & { user: { userId: string } },
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.authService.updateProfile(req.user.userId, dto);
+  }
+
+  /** Смена пароля из личного кабинета (требует текущий пароль) */
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  @HttpCode(200)
+  changePassword(
+    @Req() req: Request & { user: { userId: string } },
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(req.user.userId, dto);
   }
 
   /** Подтверждение кода из письма — активирует аккаунт и сразу логинит */

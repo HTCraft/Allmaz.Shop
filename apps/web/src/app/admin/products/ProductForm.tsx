@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   adminApi,
   AdminProduct,
+  AdminProductMedia,
   AdminCategory,
   formatPriceInput,
   parsePriceInput,
@@ -13,6 +14,7 @@ import {
 export default function ProductForm({ product }: { product?: AdminProduct }) {
   const router = useRouter();
   const isEdit = Boolean(product);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [title, setTitle] = useState(product?.title ?? '');
@@ -22,9 +24,17 @@ export default function ProductForm({ product }: { product?: AdminProduct }) {
   const [sku, setSku] = useState(product?.sku ?? '');
   const [stock, setStock] = useState(product?.stock ?? 0);
   const [categoryId, setCategoryId] = useState(product?.categoryId ?? '');
+
+  // Внешние ссылки на изображения (заменяются целиком при сохранении формы)
   const [images, setImages] = useState(
-    product?.images.map((i) => i.url).join('\n') ?? '',
+    product?.media.filter((m) => !m.filename).map((m) => m.url).join('\n') ?? '',
   );
+
+  // Полный список медиа товара (и внешние ссылки, и загруженные файлы) — для превью и удаления
+  const [mediaList, setMediaList] = useState<AdminProductMedia[]>(product?.media ?? []);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -63,6 +73,34 @@ export default function ProductForm({ product }: { product?: AdminProduct }) {
       setError(err instanceof Error ? err.message : 'Ошибка сохранения');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !product) return;
+
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const media = await adminApi.uploadProductMedia(product.id, file);
+      setMediaList((prev) => [...prev, media]);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Не удалось загрузить файл');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
+
+  async function handleDeleteMedia(mediaId: string) {
+    if (!product) return;
+    if (!confirm('Удалить этот файл?')) return;
+    try {
+      await adminApi.deleteProductMedia(product.id, mediaId);
+      setMediaList((prev) => prev.filter((m) => m.id !== mediaId));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Не удалось удалить файл');
     }
   }
 
@@ -147,7 +185,7 @@ export default function ProductForm({ product }: { product?: AdminProduct }) {
           </div>
 
           <div className="col-12">
-            <label className="form-label">Изображения (по одной ссылке на строку)</label>
+            <label className="form-label">Изображения по внешним ссылкам (по одной на строку)</label>
             <textarea
               className="form-control"
               rows={3}
@@ -157,8 +195,76 @@ export default function ProductForm({ product }: { product?: AdminProduct }) {
             />
             {isEdit && (
               <div className="form-text">
-                При сохранении список изображений полностью заменит текущий.
+                При сохранении формы этот список полностью заменит текущие внешние ссылки
+                (загруженные ниже файлы не затрагиваются).
               </div>
+            )}
+          </div>
+
+          <div className="col-12">
+            <label className="form-label">Файлы (изображения и видео)</label>
+
+            {!isEdit && (
+              <div className="alert alert-secondary py-2">
+                Сначала сохраните товар — после этого здесь можно будет загружать файлы.
+              </div>
+            )}
+
+            {isEdit && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  className="form-control"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                />
+                <div className="form-text">
+                  До 20 МБ, изображение или видео. Файл сохраняется прямо в базе данных.
+                </div>
+                {uploading && <div className="text-muted small mt-1">Загружаем...</div>}
+                {uploadError && (
+                  <div className="alert alert-danger py-2 mt-2">{uploadError}</div>
+                )}
+
+                {mediaList.length > 0 && (
+                  <div className="d-flex flex-wrap gap-2 mt-3">
+                    {mediaList.map((m) => (
+                      <div
+                        key={m.id}
+                        className="position-relative border rounded"
+                        style={{ width: 90, height: 90, overflow: 'hidden' }}
+                      >
+                        {m.type === 'VIDEO' ? (
+                          <video
+                            src={m.url}
+                            muted
+                            playsInline
+                            preload="metadata"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <img
+                            src={m.url}
+                            alt=""
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMedia(m.id)}
+                          className="btn btn-danger btn-sm position-absolute top-0 end-0 p-0"
+                          style={{ width: 22, height: 22, lineHeight: 1 }}
+                          title="Удалить"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

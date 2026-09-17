@@ -68,4 +68,16 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ token, newPassword }),
     }),
+
+  updateProfile: (name: string) =>
+    request<CurrentUser>('/auth/profile', {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
+    }),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<{ message: string }>('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
 };

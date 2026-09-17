@@ -6,6 +6,7 @@ import {
 } from '../../../lib/catalog-api';
 import { serverFetch, isAuthenticated } from '../../../lib/server-fetch';
 import FavoriteButton from '../../../components/FavoriteButton';
+import MediaThumbnail from '../../../components/MediaThumbnail';
 
 interface CatalogPageProps {
   searchParams: Promise<{
@@ -106,9 +107,9 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
                   href={`/catalog/${product.slug}`}
                   className="text-decoration-none text-reset"
                 >
-                  <img
-                    src={product.images[0]?.url ?? 'https://via.placeholder.com/400x400?text=No+Image'}
-                    alt={product.images[0]?.alt ?? product.title}
+                  <MediaThumbnail
+                    media={product.media}
+                    alt={product.title}
                     className="card-img-top"
                     style={{ aspectRatio: '1 / 1', objectFit: 'cover' }}
                   />

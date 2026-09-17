@@ -105,8 +105,8 @@ async function main() {
       update: {},
       create: {
         ...productData,
-        images: {
-          create: images.map((url, index) => ({ url, position: index })),
+        media: {
+          create: images.map((url, index) => ({ url, type: 'IMAGE', position: index })),
         },
       },
     });

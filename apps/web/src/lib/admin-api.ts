@@ -34,6 +34,36 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return data as T;
 }
 
+/** Отдельная функция для multipart-загрузки — нельзя ставить Content-Type вручную,
+ *  браузер сам подставит правильный boundary для multipart/form-data */
+async function uploadFile<T>(path: string, file: File): Promise<T> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  });
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    const message = data?.message ?? 'Произошла ошибка загрузки';
+    throw new Error(Array.isArray(message) ? message.join(', ') : message);
+  }
+
+  return data as T;
+}
+
+export interface AdminProductMedia {
+  id: string;
+  type: 'IMAGE' | 'VIDEO';
+  url: string;
+  filename: string | null;
+  position: number;
+}
+
 export interface AdminProduct {
   id: string;
   title: string;
@@ -44,7 +74,7 @@ export interface AdminProduct {
   stock: number;
   categoryId: string | null;
   category: { id: string; name: string; slug: string } | null;
-  images: { id: string; url: string; position: number }[];
+  media: AdminProductMedia[];
 }
 
 export interface AdminCategory {
@@ -96,7 +126,7 @@ export interface AdminCarouselSlide {
   product: {
     id: string;
     title: string;
-    images: { url: string }[];
+    media: { url: string }[];
   };
 }
 
@@ -118,6 +148,12 @@ export const adminApi = {
     }),
   deleteProduct: (id: string) =>
     request(`/admin/products/${id}`, { method: 'DELETE' }),
+
+  uploadProductMedia: (productId: string, file: File) =>
+    uploadFile<AdminProductMedia>(`/admin/products/${productId}/media`, file),
+
+  deleteProductMedia: (productId: string, mediaId: string) =>
+    request(`/admin/products/${productId}/media/${mediaId}`, { method: 'DELETE' }),
 
   // Категории
   listCategories: () => request<AdminCategory[]>('/admin/categories'),

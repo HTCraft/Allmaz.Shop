@@ -69,7 +69,7 @@ model Product {
   stock          Int             @default(0)
   category       Category?       @relation(fields: [categoryId], references: [id])
   categoryId     String?
-  images         ProductImage[]
+  media          ProductMedia[]
   orderItems     OrderItem[]
   cartItems      CartItem[]
   favorites      Favorite[]
@@ -78,13 +78,28 @@ model Product {
   updatedAt      DateTime        @updatedAt
 }
 
-model ProductImage {
-  id        String  @id @default(cuid())
-  url       String
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+/**
+ * Медиафайл товара — изображение или видео. Поддерживает два источника:
+ * 1) внешняя ссылка (заполняется через текстовое поле в форме, filename пуст);
+ * 2) загруженный файл — физически лежит на диске сервера в apps/api/uploads/,
+ *    url при этом хранит путь вида "/uploads/xxx.jpg", отдаётся статикой Express.
+ * Файлы никогда не хранятся в самой БД — только путь/ссылка на них.
+ */
+model ProductMedia {
+  id        String    @id @default(cuid())
+  type      MediaType @default(IMAGE)
+  url       String // внешняя ссылка ИЛИ путь /uploads/... к файлу на диске
+  filename  String? // исходное имя загруженного файла; пусто для внешних ссылок
   alt       String?
-  position  Int     @default(0)
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  position  Int       @default(0)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId String
+  createdAt DateTime  @default(now())
 }
 
 model Order {

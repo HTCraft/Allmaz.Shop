@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { serverFetch, isAuthenticated } from '../../../lib/server-fetch';
 import { formatPrice, Product } from '../../../lib/catalog-api';
 import FavoriteButton from '../../../components/FavoriteButton';
+import MediaThumbnail from '../../../components/MediaThumbnail';
 
 export default async function FavoritesPage() {
   if (!(await isAuthenticated())) {
@@ -32,8 +33,8 @@ export default async function FavoritesPage() {
                   <FavoriteButton productId={product.id} initialFavorited size="sm" />
                 </div>
                 <Link href={`/catalog/${product.slug}`} className="text-decoration-none text-reset">
-                  <img
-                    src={product.images[0]?.url ?? 'https://via.placeholder.com/400x400?text=No+Image'}
+                  <MediaThumbnail
+                    media={product.media}
                     alt={product.title}
                     className="card-img-top"
                     style={{ aspectRatio: '1 / 1', objectFit: 'cover' }}

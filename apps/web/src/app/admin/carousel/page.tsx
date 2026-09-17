@@ -229,7 +229,7 @@ export default function AdminCarouselPage() {
                     <td style={{ width: 56 }}>
                       <img
                         src={
-                          slide.product.images[0]?.url ??
+                          slide.product.media[0]?.url ??
                           'https://via.placeholder.com/48x48?text=—'
                         }
                         alt=""

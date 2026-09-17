@@ -1,13 +1,20 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@ecommerce/database';
 import { AddCartItemDto } from './dto/add-cart-item.dto';
+import { resolveMediaUrl } from '../media/resolve-media-url';
 
 const CART_INCLUDE = {
   items: {
     include: {
       product: {
         include: {
-          images: { orderBy: { position: 'asc' as const }, take: 1 },
+          // Для миниатюры в корзине берём только первое ИЗОБРАЖЕНИЕ (не видео)
+          media: {
+            where: { type: 'IMAGE' as const },
+            orderBy: { position: 'asc' as const },
+            take: 1,
+            select: { id: true, url: true },
+          },
         },
       },
     },
@@ -108,7 +115,7 @@ export class CartService {
         slug: string;
         priceCents: number;
         stock: number;
-        images: Array<{ url: string; alt: string | null }>;
+        media: Array<{ id: string; url: string }>;
       };
     }>;
   }) {
@@ -121,7 +128,7 @@ export class CartService {
         slug: item.product.slug,
         priceCents: item.product.priceCents,
         stock: item.product.stock,
-        image: item.product.images[0]?.url ?? null,
+        image: item.product.media[0] ? resolveMediaUrl(item.product.media[0]) : null,
       },
       subtotalCents: item.product.priceCents * item.quantity,
     }));

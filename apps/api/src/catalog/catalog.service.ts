@@ -1,6 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, prisma } from '@ecommerce/database';
 import { ProductQueryDto } from './dto/product-query.dto';
+import { resolveMediaUrl } from '../media/resolve-media-url';
+
+const MEDIA_SELECT = {
+  id: true,
+  type: true,
+  url: true,
+  alt: true,
+  position: true,
+} as const;
+
+function withResolvedMedia<T extends { media: Array<{ id: string; url: string }> }>(
+  product: T,
+) {
+  return { ...product, media: product.media.map((m) => ({ ...m, url: resolveMediaUrl(m) })) };
+}
 
 @Injectable()
 export class CatalogService {
@@ -37,14 +52,14 @@ export class CatalogService {
         take: limit,
         include: {
           category: true,
-          images: { orderBy: { position: 'asc' } },
+          media: { orderBy: { position: 'asc' }, select: MEDIA_SELECT },
         },
       }),
       prisma.product.count({ where }),
     ]);
 
     return {
-      items,
+      items: items.map(withResolvedMedia),
       pagination: {
         page,
         limit,
@@ -59,7 +74,7 @@ export class CatalogService {
       where: { slug },
       include: {
         category: true,
-        images: { orderBy: { position: 'asc' } },
+        media: { orderBy: { position: 'asc' }, select: MEDIA_SELECT },
       },
     });
 
@@ -67,6 +82,6 @@ export class CatalogService {
       throw new NotFoundException('Товар не найден');
     }
 
-    return product;
+    return withResolvedMedia(product);
   }
 }

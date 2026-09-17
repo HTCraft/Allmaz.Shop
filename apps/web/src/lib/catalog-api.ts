@@ -6,8 +6,11 @@ export interface Category {
   slug: string;
 }
 
-export interface ProductImage {
+export type MediaType = 'IMAGE' | 'VIDEO';
+
+export interface ProductMedia {
   id: string;
+  type: MediaType;
   url: string;
   alt: string | null;
   position: number;
@@ -22,7 +25,7 @@ export interface Product {
   sku: string;
   stock: number;
   category: Category | null;
-  images: ProductImage[];
+  media: ProductMedia[];
 }
 
 export interface ProductListResponse {

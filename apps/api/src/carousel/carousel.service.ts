@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { prisma } from '@ecommerce/database';
+import { resolveMediaUrl } from '../media/resolve-media-url';
 
 const DEFAULT_SETTINGS = {
   id: 'singleton',
@@ -19,7 +20,15 @@ export class CarouselService {
         orderBy: { position: 'asc' },
         include: {
           product: {
-            include: { images: { orderBy: { position: 'asc' }, take: 1 } },
+            include: {
+              // В карусели-баннере показываем только изображение, не видео
+              media: {
+                where: { type: 'IMAGE' },
+                orderBy: { position: 'asc' },
+                take: 1,
+                select: { id: true, url: true },
+              },
+            },
           },
         },
       }),
@@ -35,7 +44,7 @@ export class CarouselService {
           title: s.product.title,
           slug: s.product.slug,
           priceCents: s.product.priceCents,
-          image: s.product.images[0]?.url ?? null,
+          image: s.product.media[0] ? resolveMediaUrl(s.product.media[0]) : null,
         },
       })),
     };

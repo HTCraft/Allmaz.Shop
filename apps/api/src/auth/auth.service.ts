@@ -16,6 +16,8 @@ import { RestorePasswordDto } from './dto/restore-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 час
 const VERIFICATION_CODE_TTL_MS = 15 * 60 * 1000; // 15 минут
@@ -84,6 +86,38 @@ export class AuthService {
       throw new UnauthorizedException();
     }
     return user;
+  }
+
+  /** Обновление профиля — пока только имя; email намеренно не даём менять здесь,
+   *  чтобы не усложнять флоу повторной верификации почты */
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { name: dto.name },
+      select: { id: true, email: true, name: true, role: true, createdAt: true },
+    });
+    return user;
+  }
+
+  /** Смена пароля из личного кабинета — требует знания текущего пароля */
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+
+    const currentMatches = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!currentMatches) {
+      throw new BadRequestException('Текущий пароль указан неверно');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, 10);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: passwordHash },
+    });
+
+    return { message: 'Пароль успешно изменён' };
   }
 
   /** Проверка кода из письма — активирует аккаунт и сразу логинит пользователя */

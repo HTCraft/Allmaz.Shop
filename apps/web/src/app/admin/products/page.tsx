@@ -68,7 +68,7 @@ export default function AdminProductsPage() {
                     <tr key={p.id}>
                       <td style={{ width: 56 }}>
                         <img
-                          src={p.images[0]?.url ?? 'https://via.placeholder.com/48x48?text=—'}
+                          src={p.media[0]?.url ?? 'https://via.placeholder.com/48x48?text=—'}
                           alt=""
                           width={40}
                           height={40}

@@ -29,7 +29,9 @@ export default function AuthNav() {
         <Link href="/orders" className="nav-link text-light">
           Мои заказы
         </Link>
-        <span className="text-light small">{user.name || user.email}</span>
+        <Link href="/profile" className="text-light small text-decoration-none">
+          {user.name || user.email}
+        </Link>
         <button
           type="button"
           className="btn btn-sm btn-outline-light"
