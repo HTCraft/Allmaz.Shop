@@ -16,6 +16,18 @@ export class MailService {
         secure: Number(SMTP_PORT) === 465,
         auth: { user: SMTP_USER, pass: SMTP_PASS },
       });
+
+      // Проверяем соединение один раз при старте — чтобы сразу увидеть в логах,
+      // если креды неверные, а не только когда кто-то попытается зарегистрироваться
+      this.transporter.verify((error) => {
+        if (error) {
+          this.logger.error(
+            `Не удалось подключиться к SMTP (${SMTP_HOST}:${SMTP_PORT}): ${error.message}`,
+          );
+        } else {
+          this.logger.log(`SMTP подключен: ${SMTP_HOST}:${SMTP_PORT}`);
+        }
+      });
     }
   }
 
@@ -28,8 +40,7 @@ export class MailService {
       return;
     }
 
-    await this.transporter.sendMail({
-      from: process.env.SMTP_FROM ?? 'no-reply@ecommerce.local',
+    await this.send({
       to,
       subject: 'Восстановление пароля',
       html: `<p>Для сброса пароля перейдите по ссылке:</p><p><a href="${resetLink}">${resetLink}</a></p><p>Ссылка действительна 1 час.</p>`,
@@ -43,11 +54,74 @@ export class MailService {
       return;
     }
 
-    await this.transporter.sendMail({
-      from: process.env.SMTP_FROM ?? 'no-reply@ecommerce.local',
+    await this.send({
       to,
       subject: 'Подтверждение регистрации',
       html: `<p>Спасибо за регистрацию! Ваш код подтверждения:</p><p style="font-size: 28px; font-weight: bold; letter-spacing: 4px;">${code}</p><p>Код действителен 15 минут. Введите его на сайте, чтобы активировать аккаунт.</p>`,
     });
+  }
+
+  async sendOrderConfirmationEmail(
+    to: string,
+    order: { id: string; totalCents: number; shippingAddress: string },
+  ): Promise<void> {
+    if (!this.transporter) {
+      this.logger.warn(`SMTP не настроен. Заказ ${order.id} оформлен для ${to}`);
+      return;
+    }
+
+    const orderNumber = order.id.slice(-8).toUpperCase();
+    const total = (order.totalCents / 100).toLocaleString('ru-RU', {
+      style: 'currency',
+      currency: 'RUB',
+      maximumFractionDigits: 0,
+    });
+
+    await this.send({
+      to,
+      subject: `Заказ №${orderNumber} оформлен`,
+      html: `<p>Спасибо за заказ! Номер вашего заказа — <b>${orderNumber}</b>.</p><p>Сумма: <b>${total}</b></p><p>Адрес доставки: ${order.shippingAddress}</p><p>Мы свяжемся с вами для подтверждения. Оплата — при получении.</p>`,
+    });
+  }
+
+  async sendOrderStatusChangedEmail(
+    to: string,
+    order: { id: string; statusLabel: string },
+  ): Promise<void> {
+    if (!this.transporter) {
+      this.logger.warn(
+        `SMTP не настроен. Статус заказа ${order.id} изменён: ${order.statusLabel}`,
+      );
+      return;
+    }
+
+    const orderNumber = order.id.slice(-8).toUpperCase();
+
+    await this.send({
+      to,
+      subject: `Заказ №${orderNumber}: статус изменён`,
+      html: `<p>Статус вашего заказа №<b>${orderNumber}</b> изменён на:</p><p style="font-size: 18px; font-weight: bold;">${order.statusLabel}</p>`,
+    });
+  }
+
+  /**
+   * Единая точка отправки. Ошибки SMTP (неверные креды, недоступность сервера и т.п.)
+   * логируются, но не пробрасываются дальше — падение письма не должно ронять
+   * основной запрос (регистрацию, оформление заказа и т.д.), который уже выполнил
+   * свою главную работу до отправки письма.
+   */
+  private async send(mail: { to: string; subject: string; html: string }): Promise<void> {
+    try {
+      await this.transporter!.sendMail({
+        from: process.env.SMTP_FROM ?? 'no-reply@ecommerce.local',
+        ...mail,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Не удалось отправить письмо на ${mail.to} (${mail.subject}): ${
+          error instanceof Error ? error.message : error
+        }`,
+      );
+    }
   }
 }

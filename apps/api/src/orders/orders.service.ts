@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@ecommerce/database';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { MailService } from '../mail/mail.service';
 
 const ORDER_INCLUDE = {
   items: { orderBy: { id: 'asc' as const } },
@@ -8,6 +9,8 @@ const ORDER_INCLUDE = {
 
 @Injectable()
 export class OrdersService {
+  constructor(private readonly mailService: MailService) {}
+
   async createOrder(userId: string, dto: CreateOrderDto) {
     const cart = await prisma.cart.findUnique({
       where: { userId },
@@ -65,6 +68,13 @@ export class OrdersService {
 
       return created;
     });
+
+    // Письмо не должно блокировать ответ пользователю — заказ уже создан и
+    // это главное; ошибку отправки сам MailService проглотит и залогирует
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (user) {
+      void this.mailService.sendOrderConfirmationEmail(user.email, order);
+    }
 
     return order;
   }

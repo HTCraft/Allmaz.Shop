@@ -11,8 +11,10 @@ import { AdminCarouselController } from './carousel/admin-carousel.controller';
 import { AdminCarouselService } from './carousel/admin-carousel.service';
 import { AdminOrdersController } from './orders/admin-orders.controller';
 import { AdminOrdersService } from './orders/admin-orders.service';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
+  imports: [MailModule],
   controllers: [
     AdminProductsController,
     AdminCategoriesController,
