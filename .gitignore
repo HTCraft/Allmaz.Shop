@@ -28,7 +28,6 @@ npm-debug.log*
 # IDE
 .vscode/
 .idea/
-amvera.txt
 
 # OS
 .DS_Store
