@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { AdminCategoriesService } from './admin-categories.service';
 import { CreateCategoryDto, UpdateCategoryDto } from '../dto/category.dto';
+import { AdminPaginationQueryDto } from '../dto/pagination.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
@@ -12,8 +13,8 @@ export class AdminCategoriesController {
   constructor(private readonly service: AdminCategoriesService) {}
 
   @Get()
-  list() {
-    return this.service.list();
+  list(@Query() query: AdminPaginationQueryDto) {
+    return this.service.list(query);
   }
 
   @Post()

@@ -1,10 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { adminApi, AdminCategory } from '../../../lib/admin-api';
+import { adminApi, AdminCategory, Pagination } from '../../../lib/admin-api';
+import AdminPagination from '../../../components/AdminPagination';
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<AdminCategory[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,13 +22,22 @@ export default function AdminCategoriesPage() {
   function load() {
     setLoading(true);
     adminApi
-      .listCategories()
-      .then(setCategories)
+      .listCategories({ page, search: search || undefined })
+      .then((res) => {
+        setCategories(res.items);
+        setPagination(res.pagination);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, []);
+  useEffect(load, [page, search]);
+
+  function handleSearchSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setPage(1);
+    setSearch(searchInput.trim());
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -31,9 +45,9 @@ export default function AdminCategoriesPage() {
     setCreating(true);
     setError(null);
     try {
-      const category = await adminApi.createCategory({ name: newName.trim() });
-      setCategories((prev) => [...prev, category].sort((a, b) => a.name.localeCompare(b.name)));
+      await adminApi.createCategory({ name: newName.trim() });
       setNewName('');
+      load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось создать категорию');
     } finally {
@@ -48,9 +62,9 @@ export default function AdminCategoriesPage() {
 
   async function saveEdit(id: string) {
     try {
-      const updated = await adminApi.updateCategory(id, { name: editingName });
-      setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, ...updated } : c)));
+      await adminApi.updateCategory(id, { name: editingName });
       setEditingId(null);
+      load();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Не удалось сохранить');
     }
@@ -60,7 +74,7 @@ export default function AdminCategoriesPage() {
     if (!confirm(`Удалить категорию «${name}»? Товары останутся, но потеряют категорию.`)) return;
     try {
       await adminApi.deleteCategory(id);
-      setCategories((prev) => prev.filter((c) => c.id !== id));
+      load();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Не удалось удалить');
     }
@@ -85,6 +99,19 @@ export default function AdminCategoriesPage() {
           </form>
         </div>
       </div>
+
+      <form onSubmit={handleSearchSubmit} className="d-flex gap-2 mb-3" style={{ maxWidth: 360 }}>
+        <input
+          type="text"
+          className="form-control form-control-sm"
+          placeholder="Поиск по названию..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+        />
+        <button type="submit" className="btn btn-sm btn-outline-secondary text-nowrap">
+          Найти
+        </button>
+      </form>
 
       {error && <div className="alert alert-danger">{error}</div>}
 
@@ -156,13 +183,15 @@ export default function AdminCategoriesPage() {
                 {categories.length === 0 && (
                   <tr>
                     <td colSpan={4} className="text-center text-muted py-4">
-                      Категорий пока нет
+                      Категорий не найдено
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           )}
+
+          {pagination && <AdminPagination pagination={pagination} onPageChange={setPage} />}
         </div>
       </div>
     </>

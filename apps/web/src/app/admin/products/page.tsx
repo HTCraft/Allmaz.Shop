@@ -2,11 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { adminApi, AdminProduct } from '../../../lib/admin-api';
+import { adminApi, AdminProduct, Pagination } from '../../../lib/admin-api';
 import { formatPrice } from '../../../lib/catalog-api';
+import AdminPagination from '../../../components/AdminPagination';
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -14,20 +19,29 @@ export default function AdminProductsPage() {
   function load() {
     setLoading(true);
     adminApi
-      .listProducts()
-      .then(setProducts)
+      .listProducts({ page, search: search || undefined })
+      .then((res) => {
+        setProducts(res.items);
+        setPagination(res.pagination);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, []);
+  useEffect(load, [page, search]);
+
+  function handleSearchSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setPage(1);
+    setSearch(searchInput.trim());
+  }
 
   async function handleDelete(id: string, title: string) {
     if (!confirm(`Удалить товар «${title}»?`)) return;
     setDeletingId(id);
     try {
       await adminApi.deleteProduct(id);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
+      load();
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Не удалось удалить товар');
     } finally {
@@ -43,6 +57,19 @@ export default function AdminProductsPage() {
           <i className="bi bi-plus-lg me-1" /> Добавить товар
         </Link>
       </div>
+
+      <form onSubmit={handleSearchSubmit} className="d-flex gap-2 mb-3" style={{ maxWidth: 360 }}>
+        <input
+          type="text"
+          className="form-control form-control-sm"
+          placeholder="Поиск по названию или артикулу..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+        />
+        <button type="submit" className="btn btn-sm btn-outline-secondary text-nowrap">
+          Найти
+        </button>
+      </form>
 
       <div className="card">
         <div className="card-body">
@@ -106,7 +133,7 @@ export default function AdminProductsPage() {
                   {products.length === 0 && (
                     <tr>
                       <td colSpan={7} className="text-center text-muted py-4">
-                        Товаров пока нет
+                        Товаров не найдено
                       </td>
                     </tr>
                   )}
@@ -114,6 +141,8 @@ export default function AdminProductsPage() {
               </table>
             </div>
           )}
+
+          {pagination && <AdminPagination pagination={pagination} onPageChange={setPage} />}
         </div>
       </div>
     </>

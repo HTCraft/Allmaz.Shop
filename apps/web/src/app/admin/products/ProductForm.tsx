@@ -39,7 +39,10 @@ export default function ProductForm({ product }: { product?: AdminProduct }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    adminApi.listCategories().then(setCategories).catch(() => null);
+    adminApi
+      .listCategories({ limit: 100 })
+      .then((res) => setCategories(res.items))
+      .catch(() => null);
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {

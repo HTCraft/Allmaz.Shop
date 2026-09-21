@@ -24,12 +24,12 @@ export default function AdminCarouselPage() {
     Promise.all([
       adminApi.getCarouselSettings(),
       adminApi.listCarouselSlides(),
-      adminApi.listProducts(),
+      adminApi.listProducts({ limit: 200 }),
     ])
       .then(([s, sl, p]) => {
         setSettings(s);
         setSlides(sl);
-        setProducts(p);
+        setProducts(p.items);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));

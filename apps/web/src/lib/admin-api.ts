@@ -131,11 +131,39 @@ export interface AdminCarouselSlide {
   };
 }
 
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedResult<T> {
+  items: T[];
+  pagination: Pagination;
+}
+
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+function toQueryString(params: PaginationParams = {}): string {
+  const sp = new URLSearchParams();
+  if (params.page) sp.set('page', String(params.page));
+  if (params.limit) sp.set('limit', String(params.limit));
+  if (params.search) sp.set('search', params.search);
+  const qs = sp.toString();
+  return qs ? `?${qs}` : '';
+}
+
 export const adminApi = {
   getStats: () => request<AdminStats>('/admin/stats'),
 
   // Товары
-  listProducts: () => request<AdminProduct[]>('/admin/products'),
+  listProducts: (params?: PaginationParams) =>
+    request<PaginatedResult<AdminProduct>>(`/admin/products${toQueryString(params)}`),
   getProduct: (id: string) => request<AdminProduct>(`/admin/products/${id}`),
   createProduct: (data: ProductFormInput) =>
     request<AdminProduct>('/admin/products', {
@@ -157,7 +185,8 @@ export const adminApi = {
     request(`/admin/products/${productId}/media/${mediaId}`, { method: 'DELETE' }),
 
   // Категории
-  listCategories: () => request<AdminCategory[]>('/admin/categories'),
+  listCategories: (params?: PaginationParams) =>
+    request<PaginatedResult<AdminCategory>>(`/admin/categories${toQueryString(params)}`),
   createCategory: (data: { name: string; slug?: string }) =>
     request<AdminCategory>('/admin/categories', {
       method: 'POST',
@@ -172,7 +201,8 @@ export const adminApi = {
     request(`/admin/categories/${id}`, { method: 'DELETE' }),
 
   // Пользователи
-  listUsers: () => request<AdminUser[]>('/admin/users'),
+  listUsers: (params?: PaginationParams) =>
+    request<PaginatedResult<AdminUser>>(`/admin/users${toQueryString(params)}`),
   updateUserRole: (id: string, role: 'USER' | 'ADMIN') =>
     request<AdminUser>(`/admin/users/${id}/role`, {
       method: 'PUT',
@@ -202,7 +232,8 @@ export const adminApi = {
     request(`/admin/carousel/slides/${id}`, { method: 'DELETE' }),
 
   // Заказы
-  listOrders: () => request<AdminOrder[]>('/admin/orders'),
+  listOrders: (params?: PaginationParams) =>
+    request<PaginatedResult<AdminOrder>>(`/admin/orders${toQueryString(params)}`),
   getOrder: (id: string) => request<AdminOrder>(`/admin/orders/${id}`),
   updateOrderStatus: (id: string, status: OrderStatus) =>
     request<AdminOrder>(`/admin/orders/${id}/status`, {

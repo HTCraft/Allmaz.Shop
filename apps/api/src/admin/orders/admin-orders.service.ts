@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@ecommerce/database';
 import { UpdateOrderStatusDto } from '../dto/update-user-role.dto';
 import { MailService } from '../../mail/mail.service';
+import { AdminPaginationQueryDto, buildPagination } from '../dto/pagination.dto';
 
 const ADMIN_ORDER_INCLUDE = {
   items: { orderBy: { id: 'asc' as const } },
@@ -20,11 +21,31 @@ const STATUS_LABELS: Record<string, string> = {
 export class AdminOrdersService {
   constructor(private readonly mailService: MailService) {}
 
-  async list() {
-    return prisma.order.findMany({
-      include: ADMIN_ORDER_INCLUDE,
-      orderBy: { createdAt: 'desc' },
-    });
+  async list(query: AdminPaginationQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const where = query.search
+      ? {
+          OR: [
+            { id: { contains: query.search, mode: 'insensitive' as const } },
+            { user: { email: { contains: query.search, mode: 'insensitive' as const } } },
+          ],
+        }
+      : {};
+
+    const [items, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: ADMIN_ORDER_INCLUDE,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    return { items, pagination: buildPagination(page, limit, total) };
   }
 
   async get(id: string) {

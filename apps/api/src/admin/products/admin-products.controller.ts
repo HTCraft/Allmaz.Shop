@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -18,6 +19,7 @@ import { randomUUID } from 'crypto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
+import { AdminPaginationQueryDto } from '../dto/pagination.dto';
 import { AdminProductsService } from './admin-products.service';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
@@ -31,8 +33,8 @@ export class AdminProductsController {
   constructor(private readonly service: AdminProductsService) {}
 
   @Get()
-  list() {
-    return this.service.list();
+  list(@Query() query: AdminPaginationQueryDto) {
+    return this.service.list(query);
   }
 
   @Get(':id')

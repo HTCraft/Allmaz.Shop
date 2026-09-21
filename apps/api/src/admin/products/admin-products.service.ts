@@ -10,6 +10,7 @@ import { prisma } from '@ecommerce/database';
 import { slugify } from '@ecommerce/shared';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
+import { AdminPaginationQueryDto, buildPagination } from '../dto/pagination.dto';
 import { resolveMediaUrl } from '../../media/resolve-media-url';
 
 const UPLOADS_DIR = join(process.cwd(), 'uploads');
@@ -31,15 +32,37 @@ function withResolvedUrl<T extends { id: string; url: string }>(media: T) {
 
 @Injectable()
 export class AdminProductsService {
-  async list() {
-    const products = await prisma.product.findMany({
-      include: {
-        category: true,
-        media: { orderBy: { position: 'asc' }, select: MEDIA_SELECT },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    return products.map((p) => ({ ...p, media: p.media.map(withResolvedUrl) }));
+  async list(query: AdminPaginationQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const where = query.search
+      ? {
+          OR: [
+            { title: { contains: query.search, mode: 'insensitive' as const } },
+            { sku: { contains: query.search, mode: 'insensitive' as const } },
+          ],
+        }
+      : {};
+
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        include: {
+          category: true,
+          media: { orderBy: { position: 'asc' }, select: MEDIA_SELECT },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    return {
+      items: products.map((p) => ({ ...p, media: p.media.map(withResolvedUrl) })),
+      pagination: buildPagination(page, limit, total),
+    };
   }
 
   async get(id: string) {

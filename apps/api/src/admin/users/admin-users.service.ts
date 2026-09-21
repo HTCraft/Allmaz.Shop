@@ -1,19 +1,40 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@ecommerce/database';
+import { AdminPaginationQueryDto, buildPagination } from '../dto/pagination.dto';
 
 @Injectable()
 export class AdminUsersService {
-  async list() {
-    return prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  async list(query: AdminPaginationQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const where = query.search
+      ? {
+          OR: [
+            { email: { contains: query.search, mode: 'insensitive' as const } },
+            { name: { contains: query.search, mode: 'insensitive' as const } },
+          ],
+        }
+      : {};
+
+    const [items, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    return { items, pagination: buildPagination(page, limit, total) };
   }
 
   async updateRole(id: string, role: 'USER' | 'ADMIN', currentUserId: string) {
