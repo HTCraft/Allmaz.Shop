@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -9,6 +11,7 @@ import { FavoritesModule } from './favorites/favorites.module';
 import { AdminModule } from './admin/admin.module';
 import { CarouselModule } from './carousel/carousel.module';
 import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
 import { resolveRootEnvPath } from './env-path';
 
 @Module({
@@ -20,6 +23,16 @@ import { resolveRootEnvPath } from './env-path';
       isGlobal: true,
       envFilePath: resolveRootEnvPath(),
     }),
+    // Базовый rate-limit по умолчанию для ВСЕХ роутов (мягкий, просто защита
+    // от совсем уж дикого спама) — точечные, более жёсткие лимиты на
+    // чувствительные auth-эндпоинты задаются через @Throttle прямо в
+    // AuthController (логин, регистрация, восстановление пароля и т.п.)
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60_000, // 1 минута
+        limit: 100, // 100 запросов в минуту с одного IP на любой роут по умолчанию
+      },
+    ]),
     AuthModule,
     CatalogModule,
     CartModule,
@@ -27,8 +40,12 @@ import { resolveRootEnvPath } from './env-path';
     AdminModule,
     CarouselModule,
     OrdersModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

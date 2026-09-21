@@ -1,7 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { prisma } from '@ecommerce/database';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { MailService } from '../mail/mail.service';
+import { PaymentsService } from '../payments/payments.service';
 
 const ORDER_INCLUDE = {
   items: { orderBy: { id: 'asc' as const } },
@@ -9,7 +10,12 @@ const ORDER_INCLUDE = {
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly mailService: MailService) {}
+  private readonly logger = new Logger(OrdersService.name);
+
+  constructor(
+    private readonly mailService: MailService,
+    private readonly paymentsService: PaymentsService,
+  ) {}
 
   async createOrder(userId: string, dto: CreateOrderDto) {
     const cart = await prisma.cart.findUnique({
@@ -44,6 +50,7 @@ export class OrdersService {
           phone: dto.phone,
           comment: dto.comment,
           totalCents,
+          paymentMethod: dto.paymentMethod ?? 'COD',
           items: {
             create: cart.items.map((item) => ({
               productId: item.productId,
@@ -76,7 +83,26 @@ export class OrdersService {
       void this.mailService.sendOrderConfirmationEmail(user.email, order);
     }
 
-    return order;
+    // Для оплаты картой сразу создаём платёж в ЮKassa и возвращаем ссылку —
+    // если это по какой-то причине не получится, заказ всё равно уже создан
+    // (просто останется в статусе PENDING/COD, оплатить можно будет повторно)
+    let paymentUrl: string | null = null;
+    if (dto.paymentMethod === 'CARD') {
+      try {
+        const payment = await this.paymentsService.initiatePayment(userId, order.id);
+        paymentUrl = payment.paymentUrl;
+      } catch (error) {
+        // Ошибку уже залогировал сам YookassaService — просто дублируем факт,
+        // чтобы было видно прямо в контексте оформления заказа
+        this.logger.warn(
+          `Не удалось создать платёж ЮKassa для заказа ${order.id}, заказ остаётся PENDING: ${
+            error instanceof Error ? error.message : error
+          }`,
+        );
+      }
+    }
+
+    return { ...order, paymentUrl };
   }
 
   async listMyOrders(userId: string) {

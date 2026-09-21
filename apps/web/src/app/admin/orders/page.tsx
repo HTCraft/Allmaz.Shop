@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { adminApi, AdminOrder } from '../../../lib/admin-api';
 import { formatPrice } from '../../../lib/catalog-api';
-import { OrderStatus, ORDER_STATUS_LABELS, ORDER_STATUS_BADGE } from '../../../lib/orders-api';
+import { OrderStatus, ORDER_STATUS_LABELS, ORDER_STATUS_BADGE, PAYMENT_METHOD_LABELS } from '../../../lib/orders-api';
 
 const STATUS_OPTIONS: OrderStatus[] = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
@@ -51,6 +51,7 @@ export default function AdminOrdersPage() {
                   <th>№</th>
                   <th>Клиент</th>
                   <th>Товаров</th>
+                  <th>Оплата</th>
                   <th>Сумма</th>
                   <th>Статус</th>
                   <th>Дата</th>
@@ -66,6 +67,7 @@ export default function AdminOrdersPage() {
                       <div className="text-muted small">{order.user.email}</div>
                     </td>
                     <td>{order.items.length}</td>
+                    <td className="small">{PAYMENT_METHOD_LABELS[order.paymentMethod]}</td>
                     <td>{formatPrice(order.totalCents)}</td>
                     <td>
                       <select
@@ -99,7 +101,7 @@ export default function AdminOrdersPage() {
                 ))}
                 {orders.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="text-center text-muted py-4">
+                    <td colSpan={8} className="text-center text-muted py-4">
                       Заказов пока нет
                     </td>
                   </tr>

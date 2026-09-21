@@ -103,17 +103,24 @@ model ProductMedia {
 }
 
 model Order {
-  id              String      @id @default(cuid())
-  user            User        @relation(fields: [userId], references: [id])
+  id              String        @id @default(cuid())
+  user            User          @relation(fields: [userId], references: [id])
   userId          String
-  status          OrderStatus @default(PENDING)
+  status          OrderStatus   @default(PENDING)
+  paymentMethod   PaymentMethod @default(COD)
+  paymentId       String? // id платежа в ЮKassa (заполняется для paymentMethod = CARD)
   shippingAddress String
   phone           String
   comment         String?
   totalCents      Int
   items           OrderItem[]
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+enum PaymentMethod {
+  COD // оплата при получении
+  CARD // онлайн-оплата картой через ЮKassa
 }
 
 model OrderItem {

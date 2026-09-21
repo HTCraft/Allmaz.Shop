@@ -10,16 +10,23 @@ export interface OrderItemData {
 }
 
 export type OrderStatus = 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+export type PaymentMethod = 'COD' | 'CARD';
 
 export interface Order {
   id: string;
   status: OrderStatus;
+  paymentMethod: PaymentMethod;
+  paymentId: string | null;
   shippingAddress: string;
   phone: string;
   comment: string | null;
   totalCents: number;
   items: OrderItemData[];
   createdAt: string;
+}
+
+interface CreateOrderResponse extends Order {
+  paymentUrl: string | null;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -43,8 +50,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const ordersApi = {
-  create: (data: { shippingAddress: string; phone: string; comment?: string }) =>
-    request<Order>('/orders', {
+  create: (data: {
+    shippingAddress: string;
+    phone: string;
+    comment?: string;
+    paymentMethod?: PaymentMethod;
+  }) =>
+    request<CreateOrderResponse>('/orders', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -52,6 +64,13 @@ export const ordersApi = {
   list: () => request<Order[]>('/orders'),
 
   get: (id: string) => request<Order>(`/orders/${id}`),
+
+  /** (Пере)создать платёж ЮKassa для уже существующего заказа */
+  pay: (id: string) => request<{ paymentUrl: string | null }>(`/orders/${id}/pay`, { method: 'POST' }),
+
+  /** Активно спросить у бэкенда актуальный статус оплаты (сверяется с ЮKassa) */
+  checkPaymentStatus: (id: string) =>
+    request<Order>(`/orders/${id}/payment-status`, { method: 'POST' }),
 };
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
@@ -68,4 +87,9 @@ export const ORDER_STATUS_BADGE: Record<OrderStatus, string> = {
   SHIPPED: 'text-bg-primary',
   DELIVERED: 'text-bg-success',
   CANCELLED: 'text-bg-danger',
+};
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  COD: 'Оплата при получении',
+  CARD: 'Картой онлайн (ЮKassa)',
 };

@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { serverFetch } from '../../../../lib/server-fetch';
 import { formatPrice } from '../../../../lib/catalog-api';
 import { AdminOrder } from '../../../../lib/admin-api';
-import { ORDER_STATUS_LABELS, ORDER_STATUS_BADGE } from '../../../../lib/orders-api';
+import { ORDER_STATUS_LABELS, ORDER_STATUS_BADGE, PAYMENT_METHOD_LABELS } from '../../../../lib/orders-api';
 
 interface AdminOrderPageProps {
   params: Promise<{ id: string }>;
@@ -77,6 +77,10 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderPagePro
               </p>
               <p className="mb-2">
                 <span className="text-muted">Телефон:</span> {order.phone}
+              </p>
+              <p className="mb-2">
+                <span className="text-muted">Оплата:</span>{' '}
+                {PAYMENT_METHOD_LABELS[order.paymentMethod]}
               </p>
               {order.comment && (
                 <p className="mb-2">

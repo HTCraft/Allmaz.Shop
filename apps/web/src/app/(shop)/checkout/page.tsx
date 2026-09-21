@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cartApi, Cart } from '../../../lib/cart-api';
-import { ordersApi } from '../../../lib/orders-api';
+import { ordersApi, PaymentMethod } from '../../../lib/orders-api';
 import { formatPrice } from '../../../lib/catalog-api';
 
 export default function CheckoutPage() {
@@ -15,6 +15,7 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [comment, setComment] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('COD');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -41,7 +42,16 @@ export default function CheckoutPage() {
         shippingAddress: address,
         phone,
         comment: comment || undefined,
+        paymentMethod,
       });
+
+      if (paymentMethod === 'CARD' && order.paymentUrl) {
+        // Полный переход на хостед-страницу оплаты ЮKassa — не через router.push,
+        // это внешний домен
+        window.location.href = order.paymentUrl;
+        return;
+      }
+
       router.push(`/orders/${order.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось оформить заказ');
@@ -115,14 +125,52 @@ export default function CheckoutPage() {
                   />
                 </div>
 
-                <div className="alert alert-secondary small">
-                  Оплата производится наличными или картой курьеру при получении.
+                <div className="mb-3">
+                  <label className="form-label d-block">Способ оплаты</label>
+                  <div className="form-check">
+                    <input
+                      type="radio"
+                      className="form-check-input"
+                      id="pm-cod"
+                      checked={paymentMethod === 'COD'}
+                      onChange={() => setPaymentMethod('COD')}
+                    />
+                    <label className="form-check-label" htmlFor="pm-cod">
+                      Оплата при получении
+                    </label>
+                  </div>
+                  <div className="form-check">
+                    <input
+                      type="radio"
+                      className="form-check-input"
+                      id="pm-card"
+                      checked={paymentMethod === 'CARD'}
+                      onChange={() => setPaymentMethod('CARD')}
+                    />
+                    <label className="form-check-label" htmlFor="pm-card">
+                      Картой онлайн (ЮKassa)
+                    </label>
+                  </div>
                 </div>
+
+                {paymentMethod === 'COD' ? (
+                  <div className="alert alert-secondary small">
+                    Оплата производится наличными или картой курьеру при получении.
+                  </div>
+                ) : (
+                  <div className="alert alert-info small">
+                    После нажатия кнопки ниже откроется защищённая страница оплаты ЮKassa.
+                  </div>
+                )}
 
                 {error && <div className="alert alert-danger py-2">{error}</div>}
 
                 <button type="submit" className="btn btn-success btn-lg w-100" disabled={submitting}>
-                  {submitting ? 'Оформляем...' : `Подтвердить заказ на ${formatPrice(cart.totalCents)}`}
+                  {submitting
+                    ? 'Оформляем...'
+                    : paymentMethod === 'CARD'
+                      ? `Перейти к оплате ${formatPrice(cart.totalCents)}`
+                      : `Подтвердить заказ на ${formatPrice(cart.totalCents)}`}
                 </button>
               </form>
             </div>

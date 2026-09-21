@@ -2,7 +2,13 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { serverFetch, isAuthenticated } from '../../../../lib/server-fetch';
 import { formatPrice } from '../../../../lib/catalog-api';
-import { Order, ORDER_STATUS_LABELS, ORDER_STATUS_BADGE } from '../../../../lib/orders-api';
+import {
+  Order,
+  ORDER_STATUS_LABELS,
+  ORDER_STATUS_BADGE,
+  PAYMENT_METHOD_LABELS,
+} from '../../../../lib/orders-api';
+import PaymentStatusSync from '../../../../components/PaymentStatusSync';
 
 interface OrderPageProps {
   params: Promise<{ id: string }>;
@@ -29,11 +35,15 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
         </ol>
       </nav>
 
-      <div className="d-flex justify-content-between align-items-start mb-4">
+      <div className="d-flex justify-content-between align-items-start mb-3">
         <h1 className="h3 mb-0">Заказ №{order.id.slice(-8).toUpperCase()}</h1>
         <span className={`badge ${ORDER_STATUS_BADGE[order.status]} fs-6`}>
           {ORDER_STATUS_LABELS[order.status]}
         </span>
+      </div>
+
+      <div className="mb-4">
+        <PaymentStatusSync order={order} />
       </div>
 
       <div className="row g-4">
@@ -77,6 +87,10 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
               </p>
               <p className="mb-2">
                 <span className="text-muted">Телефон:</span> {order.phone}
+              </p>
+              <p className="mb-2">
+                <span className="text-muted">Оплата:</span>{' '}
+                {PAYMENT_METHOD_LABELS[order.paymentMethod]}
               </p>
               {order.comment && (
                 <p className="mb-2">

@@ -1,34 +1,58 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { lookup } from 'dns/promises';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
-export class MailService {
+export class MailService implements OnModuleInit {
   private readonly logger = new Logger(MailService.name);
   private transporter: nodemailer.Transporter | null = null;
 
-  constructor() {
+  async onModuleInit() {
     const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
 
-    if (SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS) {
-      this.transporter = nodemailer.createTransport({
-        host: SMTP_HOST,
-        port: Number(SMTP_PORT),
-        secure: Number(SMTP_PORT) === 465,
-        auth: { user: SMTP_USER, pass: SMTP_PASS },
-      });
-
-      // Проверяем соединение один раз при старте — чтобы сразу увидеть в логах,
-      // если креды неверные, а не только когда кто-то попытается зарегистрироваться
-      this.transporter.verify((error) => {
-        if (error) {
-          this.logger.error(
-            `Не удалось подключиться к SMTP (${SMTP_HOST}:${SMTP_PORT}): ${error.message}`,
-          );
-        } else {
-          this.logger.log(`SMTP подключен: ${SMTP_HOST}:${SMTP_PORT}`);
-        }
-      });
+    if (!(SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS)) {
+      return; // SMTP не настроен — методы ниже просто логируют в консоль
     }
+
+    // На некоторых сетях (VPN, виртуальные адаптеры, DNS-перехват провайдером)
+    // резолвинг хоста напрямую внутри Node может вернуть недоступный IP, хотя
+    // системный резолвер ОС (тот же, что использует telnet по имени) даёт
+    // рабочий адрес. Поэтому резолвим через dns.lookup (тот же механизм ОС,
+    // getaddrinfo) и подключаемся к SMTP уже по конкретному IP — а исходное
+    // имя хоста передаём отдельно как servername, чтобы TLS-сертификат
+    // (выписанный на доменное имя, а не на IP) прошёл проверку.
+    let connectHost = SMTP_HOST;
+    try {
+      const { address } = await lookup(SMTP_HOST, { family: 4 });
+      connectHost = address;
+      this.logger.log(`SMTP-хост ${SMTP_HOST} резолвится (через ОС) в ${address}`);
+    } catch (error) {
+      this.logger.warn(
+        `Не удалось резолвить ${SMTP_HOST} через dns.lookup, используем имя хоста как есть: ${
+          error instanceof Error ? error.message : error
+        }`,
+      );
+    }
+
+    this.transporter = nodemailer.createTransport({
+      host: connectHost,
+      port: Number(SMTP_PORT),
+      secure: Number(SMTP_PORT) === 465,
+      auth: { user: SMTP_USER, pass: SMTP_PASS },
+      tls: { servername: SMTP_HOST }, // важно при подключении по IP — иначе TLS не пройдёт проверку сертификата
+    });
+
+    // Проверяем соединение один раз при старте — чтобы сразу увидеть в логах,
+    // если креды неверные, а не только когда кто-то попытается зарегистрироваться
+    this.transporter.verify((error) => {
+      if (error) {
+        this.logger.error(
+          `Не удалось подключиться к SMTP (${SMTP_HOST}:${SMTP_PORT} → ${connectHost}): ${error.message}`,
+        );
+      } else {
+        this.logger.log(`SMTP подключен: ${SMTP_HOST}:${SMTP_PORT} (через ${connectHost})`);
+      }
+    });
   }
 
   async sendPasswordResetEmail(to: string, resetLink: string): Promise<void> {

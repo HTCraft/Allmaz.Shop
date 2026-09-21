@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateOrderDto {
   @IsString()
@@ -12,4 +12,8 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   comment?: string;
+
+  @IsOptional()
+  @IsIn(['COD', 'CARD'])
+  paymentMethod?: 'COD' | 'CARD';
 }

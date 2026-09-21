@@ -9,6 +9,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -29,11 +30,13 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   /** Создаёт аккаунт в заблокированном состоянии и отправляет код на почту */
+  @Throttle({ default: { limit: 3, ttl: 60_000 } }) // не более 3 регистраций в минуту с одного IP
   @Post('register')
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60_000 } }) // защита от перебора пароля
   @Post('login')
   @HttpCode(200)
   async login(
@@ -80,6 +83,7 @@ export class AuthController {
   }
 
   /** Подтверждение кода из письма — активирует аккаунт и сразу логинит */
+  @Throttle({ default: { limit: 10, ttl: 60_000 } }) // защита от перебора 6-значного кода
   @Post('verify-email')
   @HttpCode(200)
   async verifyEmail(
@@ -92,6 +96,7 @@ export class AuthController {
   }
 
   /** Повторная отправка кода подтверждения */
+  @Throttle({ default: { limit: 3, ttl: 60_000 } }) // защита от спама письмами
   @Post('resend-verification')
   @HttpCode(200)
   resendVerification(@Body() dto: ResendVerificationDto) {
@@ -99,6 +104,7 @@ export class AuthController {
   }
 
   /** Шаг 1: пользователь вводит email на странице /restore */
+  @Throttle({ default: { limit: 3, ttl: 60_000 } }) // защита от спама письмами восстановления
   @Post('restore')
   @HttpCode(200)
   restore(@Body() dto: RestorePasswordDto) {
@@ -106,6 +112,7 @@ export class AuthController {
   }
 
   /** Шаг 2: пользователь переходит по ссылке из письма и задаёт новый пароль */
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('reset-password')
   @HttpCode(200)
   resetPassword(@Body() dto: ResetPasswordDto) {

@@ -1,10 +1,11 @@
-import type { OrderStatus, OrderItemData } from './orders-api';
+import type { OrderStatus, OrderItemData, PaymentMethod } from './orders-api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 export interface AdminOrder {
   id: string;
   status: OrderStatus;
+  paymentMethod: PaymentMethod;
   shippingAddress: string;
   phone: string;
   comment: string | null;
