@@ -112,6 +112,17 @@ async function main() {
     });
   }
 
+  await prisma.promoCode.upsert({
+    where: { code: 'WELCOME10' },
+    update: {},
+    create: { code: 'WELCOME10', discountType: 'PERCENT', value: 10, minOrderCents: 100000 },
+  });
+  await prisma.promoCode.upsert({
+    where: { code: 'MINUS500' },
+    update: {},
+    create: { code: 'MINUS500', discountType: 'FIXED', value: 50000, maxUses: 50 },
+  });
+
   console.log('Сид выполнен: администратор, категории и товары созданы');
   console.log('Логин администратора: admin@example.com / admin12345');
 }

@@ -74,6 +74,23 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   return res.json();
 }
 
+export interface ProductSuggestion {
+  id: string;
+  title: string;
+  slug: string;
+  priceCents: number;
+  image: string | null;
+}
+
+export async function suggestProducts(query: string): Promise<ProductSuggestion[]> {
+  if (!query.trim()) return [];
+  const res = await fetch(`${API_URL}/products/suggest?q=${encodeURIComponent(query)}`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
 export function formatPrice(cents: number): string {
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',

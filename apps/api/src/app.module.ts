@@ -12,6 +12,7 @@ import { AdminModule } from './admin/admin.module';
 import { CarouselModule } from './carousel/carousel.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
+import { PromoCodesModule } from './promo-codes/promo-codes.module';
 import { resolveRootEnvPath } from './env-path';
 
 @Module({
@@ -41,6 +42,7 @@ import { resolveRootEnvPath } from './env-path';
     CarouselModule,
     OrdersModule,
     PaymentsModule,
+    PromoCodesModule,
   ],
   controllers: [AppController],
   providers: [

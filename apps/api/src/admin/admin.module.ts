@@ -11,6 +11,8 @@ import { AdminCarouselController } from './carousel/admin-carousel.controller';
 import { AdminCarouselService } from './carousel/admin-carousel.service';
 import { AdminOrdersController } from './orders/admin-orders.controller';
 import { AdminOrdersService } from './orders/admin-orders.service';
+import { AdminPromoCodesController } from './promo-codes/admin-promo-codes.controller';
+import { AdminPromoCodesService } from './promo-codes/admin-promo-codes.service';
 import { MailModule } from '../mail/mail.module';
 
 @Module({
@@ -22,6 +24,7 @@ import { MailModule } from '../mail/mail.module';
     AdminStatsController,
     AdminCarouselController,
     AdminOrdersController,
+    AdminPromoCodesController,
   ],
   providers: [
     AdminProductsService,
@@ -30,6 +33,7 @@ import { MailModule } from '../mail/mail.module';
     AdminStatsService,
     AdminCarouselService,
     AdminOrdersService,
+    AdminPromoCodesService,
   ],
 })
 export class AdminModule {}

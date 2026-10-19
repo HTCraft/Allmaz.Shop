@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Script from 'next/script';
 import Link from 'next/link';
 import AuthNav from '../../components/AuthNav';
+import SearchBar from '../../components/SearchBar';
 import { AuthProvider } from '../../lib/auth-context';
 
 export const metadata: Metadata = {
@@ -52,6 +53,7 @@ export default function ShopLayout({
                   Контакты
                 </Link>
               </div>
+              <SearchBar />
               <AuthNav />
             </div>
           </nav>

@@ -26,6 +26,7 @@ model User {
   emailVerificationTokens  EmailVerificationToken[]
   cart                     Cart?
   favorites                Favorite[]
+  reviews                  Review[]
   createdAt                DateTime                   @default(now())
   updatedAt                DateTime                   @updatedAt
 }
@@ -74,6 +75,7 @@ model Product {
   cartItems      CartItem[]
   favorites      Favorite[]
   carouselSlides CarouselSlide[]
+  reviews        Review[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 }
@@ -112,7 +114,10 @@ model Order {
   shippingAddress String
   phone           String
   comment         String?
-  totalCents      Int
+  totalCents      Int // итоговая сумма К ОПЛАТЕ (уже с учётом скидки)
+  discountCents   Int           @default(0) // сумма скидки по промокоду
+  promoCode       PromoCode?    @relation(fields: [promoCodeId], references: [id], onDelete: SetNull)
+  promoCodeId     String?
   items           OrderItem[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -196,4 +201,39 @@ model CarouselSettings {
   showIndicators Boolean  @default(true)
   showControls   Boolean  @default(true)
   updatedAt      DateTime @updatedAt
+}
+
+enum DiscountType {
+  PERCENT // value = процент (1–100)
+  FIXED // value = сумма в копейках
+}
+
+model PromoCode {
+  id            String       @id @default(cuid())
+  code          String       @unique // хранится в верхнем регистре
+  discountType  DiscountType
+  value         Int
+  isActive      Boolean      @default(true)
+  maxUses       Int? // null — без лимита
+  usedCount     Int          @default(0)
+  minOrderCents Int          @default(0)
+  expiresAt     DateTime?
+  orders        Order[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int // 1–5
+  text      String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+  @@index([productId])
 }

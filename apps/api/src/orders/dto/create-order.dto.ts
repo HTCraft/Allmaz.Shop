@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class CreateOrderDto {
   @IsString()
@@ -16,4 +16,9 @@ export class CreateOrderDto {
   @IsOptional()
   @IsIn(['COD', 'CARD'])
   paymentMethod?: 'COD' | 'CARD';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  promoCode?: string;
 }

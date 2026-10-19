@@ -16,6 +16,11 @@ export class CatalogController {
     return this.catalogService.listProducts(query);
   }
 
+  @Get('products/suggest')
+  suggestProducts(@Query('q') q: string) {
+    return this.catalogService.suggestProducts(q ?? '');
+  }
+
   @Get('products/:slug')
   getProduct(@Param('slug') slug: string) {
     return this.catalogService.getProductBySlug(slug);

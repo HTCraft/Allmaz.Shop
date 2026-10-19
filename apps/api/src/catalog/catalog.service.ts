@@ -84,4 +84,35 @@ export class CatalogService {
 
     return withResolvedMedia(product);
   }
+
+  /** Лёгкий запрос под автоподсказки в поиске — только то, что нужно для выпадающего списка */
+  async suggestProducts(query: string, limit = 6) {
+    if (!query.trim()) return [];
+
+    const products = await prisma.product.findMany({
+      where: { title: { contains: query, mode: 'insensitive' } },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        priceCents: true,
+        media: {
+          where: { type: 'IMAGE' },
+          orderBy: { position: 'asc' },
+          take: 1,
+          select: { id: true, url: true },
+        },
+      },
+    });
+
+    return products.map((p) => ({
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      priceCents: p.priceCents,
+      image: p.media[0] ? resolveMediaUrl(p.media[0]) : null,
+    }));
+  }
 }

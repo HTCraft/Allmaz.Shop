@@ -3,6 +3,7 @@ import { prisma } from '@ecommerce/database';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { MailService } from '../mail/mail.service';
 import { PaymentsService } from '../payments/payments.service';
+import { PromoCodesService } from '../promo-codes/promo-codes.service';
 
 const ORDER_INCLUDE = {
   items: { orderBy: { id: 'asc' as const } },
@@ -15,6 +16,7 @@ export class OrdersService {
   constructor(
     private readonly mailService: MailService,
     private readonly paymentsService: PaymentsService,
+    private readonly promoCodesService: PromoCodesService,
   ) {}
 
   async createOrder(userId: string, dto: CreateOrderDto) {
@@ -37,19 +39,49 @@ export class OrdersService {
       }
     }
 
-    const totalCents = cart.items.reduce(
+    const subtotalCents = cart.items.reduce(
       (sum, item) => sum + item.product.priceCents * item.quantity,
       0,
     );
 
+    // Предварительная проверка вне транзакции — быстрый и понятный отказ (400)
+    let promoCodeId: string | null = null;
+    let discountCents = 0;
+    if (dto.promoCode?.trim()) {
+      const checked = await this.promoCodesService.check(dto.promoCode, subtotalCents);
+      promoCodeId = checked.promo.id;
+      discountCents = checked.discountCents;
+    }
+
     const order = await prisma.$transaction(async (tx) => {
+      // Окончательная защита от гонки: счётчик растёт только если лимит ещё не исчерпан
+      if (promoCodeId) {
+        const promo = await tx.promoCode.findUnique({ where: { id: promoCodeId } });
+        const applicable = this.promoCodesService.assertApplicable(promo, subtotalCents);
+        const bumped = await tx.promoCode.updateMany({
+          where: {
+            id: applicable.id,
+            isActive: true,
+            ...(applicable.maxUses !== null ? { usedCount: { lt: applicable.maxUses } } : {}),
+          },
+          data: { usedCount: { increment: 1 } },
+        });
+        if (bumped.count === 0) {
+          throw new BadRequestException('Лимит использований промокода исчерпан');
+        }
+        // Пересчёт по актуальным данным промокода (мог быть изменён админом)
+        discountCents = this.promoCodesService.calculateDiscount(applicable, subtotalCents);
+      }
+
       const created = await tx.order.create({
         data: {
           userId,
           shippingAddress: dto.shippingAddress,
           phone: dto.phone,
           comment: dto.comment,
-          totalCents,
+          totalCents: subtotalCents - discountCents,
+          discountCents,
+          promoCodeId,
           paymentMethod: dto.paymentMethod ?? 'COD',
           items: {
             create: cart.items.map((item) => ({

@@ -12,7 +12,9 @@ out/
 # Env
 .env
 .env.local
+.env.example
 .env.*.local
+.venv
 
 # Prisma
 packages/database/prisma/generated/
@@ -32,3 +34,9 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# other
+*.zip
+docs/
+old/
+workflow/
