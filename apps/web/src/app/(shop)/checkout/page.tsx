@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cartApi, Cart } from '../../../lib/cart-api';
-import { ordersApi, PaymentMethod } from '../../../lib/orders-api';
+import { ordersApi, promoApi, PaymentMethod, PromoValidation } from '../../../lib/orders-api';
 import { formatPrice } from '../../../lib/catalog-api';
 
 export default function CheckoutPage() {
@@ -18,6 +18,11 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('COD');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [promoInput, setPromoInput] = useState('');
+  const [promo, setPromo] = useState<PromoValidation | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoChecking, setPromoChecking] = useState(false);
 
   useEffect(() => {
     cartApi
@@ -33,6 +38,26 @@ export default function CheckoutPage() {
       .finally(() => setLoading(false));
   }, [router]);
 
+  async function applyPromo() {
+    if (!promoInput.trim()) return;
+    setPromoChecking(true);
+    setPromoError(null);
+    try {
+      setPromo(await promoApi.validate(promoInput.trim()));
+    } catch (err) {
+      setPromo(null);
+      setPromoError(err instanceof Error ? err.message : 'Не удалось проверить промокод');
+    } finally {
+      setPromoChecking(false);
+    }
+  }
+
+  function removePromo() {
+    setPromo(null);
+    setPromoInput('');
+    setPromoError(null);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -43,6 +68,7 @@ export default function CheckoutPage() {
         phone,
         comment: comment || undefined,
         paymentMethod,
+        promoCode: promo?.code,
       });
 
       if (paymentMethod === 'CARD' && order.paymentUrl) {
@@ -79,6 +105,8 @@ export default function CheckoutPage() {
       </main>
     );
   }
+
+  const payableCents = promo ? promo.totalCents : cart.totalCents;
 
   return (
     <main className="py-4">
@@ -169,8 +197,8 @@ export default function CheckoutPage() {
                   {submitting
                     ? 'Оформляем...'
                     : paymentMethod === 'CARD'
-                      ? `Перейти к оплате ${formatPrice(cart.totalCents)}`
-                      : `Подтвердить заказ на ${formatPrice(cart.totalCents)}`}
+                      ? `Перейти к оплате ${formatPrice(payableCents)}`
+                      : `Подтвердить заказ на ${formatPrice(payableCents)}`}
                 </button>
               </form>
             </div>
@@ -197,9 +225,64 @@ export default function CheckoutPage() {
                   </li>
                 ))}
               </ul>
+              <div className="mb-3">
+                {promo ? (
+                  <div className="alert alert-success py-2 d-flex justify-content-between align-items-center mb-0">
+                    <span>
+                      Промокод <strong>{promo.code}</strong> применён
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={removePromo}
+                    >
+                      Убрать
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="input-group">
+                      <input
+                        className="form-control"
+                        placeholder="Промокод"
+                        value={promoInput}
+                        onChange={(e) => setPromoInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            applyPromo();
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary"
+                        onClick={applyPromo}
+                        disabled={promoChecking || !promoInput.trim()}
+                      >
+                        {promoChecking ? '...' : 'Применить'}
+                      </button>
+                    </div>
+                    {promoError && <div className="text-danger small mt-1">{promoError}</div>}
+                  </>
+                )}
+              </div>
+
+              {promo && (
+                <>
+                  <div className="d-flex justify-content-between text-muted">
+                    <span>Товары</span>
+                    <span>{formatPrice(promo.subtotalCents)}</span>
+                  </div>
+                  <div className="d-flex justify-content-between text-success">
+                    <span>Скидка</span>
+                    <span>−{formatPrice(promo.discountCents)}</span>
+                  </div>
+                </>
+              )}
               <div className="d-flex justify-content-between fs-5 fw-bold">
                 <span>Итого</span>
-                <span>{formatPrice(cart.totalCents)}</span>
+                <span>{formatPrice(payableCents)}</span>
               </div>
             </div>
           </div>

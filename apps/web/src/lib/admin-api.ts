@@ -10,6 +10,7 @@ export interface AdminOrder {
   phone: string;
   comment: string | null;
   totalCents: number;
+  discountCents: number;
   items: OrderItemData[];
   user: { id: string; email: string; name: string | null };
   createdAt: string;
@@ -83,6 +84,29 @@ export interface AdminCategory {
   name: string;
   slug: string;
   _count?: { products: number };
+}
+
+export interface AdminPromoCode {
+  id: string;
+  code: string;
+  discountType: 'PERCENT' | 'FIXED';
+  value: number; // PERCENT — проценты, FIXED — копейки
+  isActive: boolean;
+  maxUses: number | null;
+  usedCount: number;
+  minOrderCents: number;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+export interface PromoCodeInput {
+  code: string;
+  discountType: 'PERCENT' | 'FIXED';
+  value: number;
+  isActive: boolean;
+  maxUses: number | null;
+  minOrderCents: number;
+  expiresAt: string | null;
 }
 
 export interface AdminUser {
@@ -201,6 +225,17 @@ export const adminApi = {
     request(`/admin/categories/${id}`, { method: 'DELETE' }),
 
   // Пользователи
+  listPromoCodes: (params?: PaginationParams) =>
+    request<PaginatedResult<AdminPromoCode>>(`/admin/promo-codes${toQueryString(params)}`),
+  createPromoCode: (data: PromoCodeInput) =>
+    request<AdminPromoCode>('/admin/promo-codes', { method: 'POST', body: JSON.stringify(data) }),
+  updatePromoCode: (id: string, data: Partial<PromoCodeInput>) =>
+    request<AdminPromoCode>(`/admin/promo-codes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deletePromoCode: (id: string) => request(`/admin/promo-codes/${id}`, { method: 'DELETE' }),
+
   listUsers: (params?: PaginationParams) =>
     request<PaginatedResult<AdminUser>>(`/admin/users${toQueryString(params)}`),
   updateUserRole: (id: string, role: 'USER' | 'ADMIN') =>

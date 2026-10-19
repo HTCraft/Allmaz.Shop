@@ -52,6 +52,12 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderPagePro
                   ))}
                 </tbody>
               </table>
+              {order.discountCents > 0 && (
+                <div className="d-flex justify-content-between text-success mb-1">
+                  <span>Скидка по промокоду</span>
+                  <span>−{formatPrice(order.discountCents)}</span>
+                </div>
+              )}
               <div className="d-flex justify-content-between fs-5 fw-bold">
                 <span>Итого</span>
                 <span>{formatPrice(order.totalCents)}</span>

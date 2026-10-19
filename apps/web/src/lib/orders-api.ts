@@ -21,6 +21,7 @@ export interface Order {
   phone: string;
   comment: string | null;
   totalCents: number;
+  discountCents: number;
   items: OrderItemData[];
   createdAt: string;
 }
@@ -55,6 +56,7 @@ export const ordersApi = {
     phone: string;
     comment?: string;
     paymentMethod?: PaymentMethod;
+    promoCode?: string;
   }) =>
     request<CreateOrderResponse>('/orders', {
       method: 'POST',
@@ -71,6 +73,23 @@ export const ordersApi = {
   /** Активно спросить у бэкенда актуальный статус оплаты (сверяется с ЮKassa) */
   checkPaymentStatus: (id: string) =>
     request<Order>(`/orders/${id}/payment-status`, { method: 'POST' }),
+};
+
+export interface PromoValidation {
+  code: string;
+  discountType: 'PERCENT' | 'FIXED';
+  value: number;
+  subtotalCents: number;
+  discountCents: number;
+  totalCents: number;
+}
+
+export const promoApi = {
+  validate: (code: string) =>
+    request<PromoValidation>('/promo-codes/validate', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }),
 };
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {

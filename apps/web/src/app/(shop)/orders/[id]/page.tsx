@@ -70,7 +70,13 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
                   </li>
                 ))}
               </ul>
-              <div className="d-flex justify-content-between fs-5 fw-bold mt-3">
+              {order.discountCents > 0 && (
+                <div className="d-flex justify-content-between text-success mt-3">
+                  <span>Скидка по промокоду</span>
+                  <span>−{formatPrice(order.discountCents)}</span>
+                </div>
+              )}
+              <div className="d-flex justify-content-between fs-5 fw-bold mt-2">
                 <span>Итого</span>
                 <span>{formatPrice(order.totalCents)}</span>
               </div>
