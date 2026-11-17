@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { extname } from 'path';
 import { randomUUID } from 'crypto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
@@ -23,8 +23,7 @@ import { AdminPaginationQueryDto } from '../dto/pagination.dto';
 import { AdminProductsService } from './admin-products.service';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
-
-const UPLOADS_DIR = join(process.cwd(), 'uploads');
+import { UPLOADS_DIR } from '../../media/uploads-dir';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
@@ -57,7 +56,7 @@ export class AdminProductsController {
     return this.service.remove(id);
   }
 
-  /** Загрузка файла (изображение/видео) для товара — сохраняется на диск сервера */
+  /** Загрузка файла (изображение/видео) для товара: на диск сервера или, если задан STORAGE_API_KEY, во внешнее хранилище */
   @Post(':id/media')
   @UseInterceptors(
     FileInterceptor('file', {

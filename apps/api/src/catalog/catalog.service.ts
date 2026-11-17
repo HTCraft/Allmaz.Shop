@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, prisma } from '@ecommerce/database';
 import { ProductQueryDto } from './dto/product-query.dto';
 import { resolveMediaUrl } from '../media/resolve-media-url';
+import { EMPTY_RATING, getRatingMap } from '../reviews/rating-stats';
 
 const MEDIA_SELECT = {
   id: true,
@@ -58,8 +59,13 @@ export class CatalogService {
       prisma.product.count({ where }),
     ]);
 
+    const ratings = await getRatingMap(items.map((p) => p.id));
+
     return {
-      items: items.map(withResolvedMedia),
+      items: items.map((p) => ({
+        ...withResolvedMedia(p),
+        rating: ratings.get(p.id) ?? EMPTY_RATING,
+      })),
       pagination: {
         page,
         limit,
@@ -82,7 +88,8 @@ export class CatalogService {
       throw new NotFoundException('Товар не найден');
     }
 
-    return withResolvedMedia(product);
+    const ratings = await getRatingMap([product.id]);
+    return { ...withResolvedMedia(product), rating: ratings.get(product.id) ?? EMPTY_RATING };
   }
 
   /** Лёгкий запрос под автоподсказки в поиске — только то, что нужно для выпадающего списка */

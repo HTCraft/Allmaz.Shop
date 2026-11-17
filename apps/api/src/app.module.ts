@@ -12,6 +12,7 @@ import { AdminModule } from './admin/admin.module';
 import { CarouselModule } from './carousel/carousel.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import { PromoCodesModule } from './promo-codes/promo-codes.module';
 import { resolveRootEnvPath } from './env-path';
 
@@ -31,7 +32,9 @@ import { resolveRootEnvPath } from './env-path';
     ThrottlerModule.forRoot([
       {
         ttl: 60_000, // 1 минута
-        limit: 100, // 100 запросов в минуту с одного IP на любой роут по умолчанию
+        // По умолчанию 100 запросов в минуту с одного IP. Серверный рендеринг Next.js ходит
+        // в API с одного IP за всех посетителей — в production поднимите через THROTTLE_LIMIT
+        limit: Number(process.env['THROTTLE_LIMIT'] ?? 100),
       },
     ]),
     AuthModule,
@@ -43,6 +46,7 @@ import { resolveRootEnvPath } from './env-path';
     OrdersModule,
     PaymentsModule,
     PromoCodesModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [

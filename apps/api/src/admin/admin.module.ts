@@ -13,10 +13,13 @@ import { AdminOrdersController } from './orders/admin-orders.controller';
 import { AdminOrdersService } from './orders/admin-orders.service';
 import { AdminPromoCodesController } from './promo-codes/admin-promo-codes.controller';
 import { AdminPromoCodesService } from './promo-codes/admin-promo-codes.service';
+import { AdminReviewsController } from './reviews/admin-reviews.controller';
+import { AdminReviewsService } from './reviews/admin-reviews.service';
 import { MailModule } from '../mail/mail.module';
+import { OrderLifecycleModule } from '../order-lifecycle/order-lifecycle.module';
 
 @Module({
-  imports: [MailModule],
+  imports: [MailModule, OrderLifecycleModule],
   controllers: [
     AdminProductsController,
     AdminCategoriesController,
@@ -25,6 +28,7 @@ import { MailModule } from '../mail/mail.module';
     AdminCarouselController,
     AdminOrdersController,
     AdminPromoCodesController,
+    AdminReviewsController,
   ],
   providers: [
     AdminProductsService,
@@ -34,6 +38,7 @@ import { MailModule } from '../mail/mail.module';
     AdminCarouselService,
     AdminOrdersService,
     AdminPromoCodesService,
+    AdminReviewsService,
   ],
 })
 export class AdminModule {}

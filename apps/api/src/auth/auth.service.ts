@@ -213,7 +213,7 @@ export class AuthService {
       },
     });
 
-    const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
+    const frontendUrl = process.env['FRONTEND_URL'] ?? 'http://localhost:3000';
     const resetLink = `${frontendUrl}/reset-password?token=${token}`;
 
     await this.mailService.sendPasswordResetEmail(user.email, resetLink);

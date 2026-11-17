@@ -23,6 +23,8 @@ export interface Order {
   totalCents: number;
   discountCents: number;
   items: OrderItemData[];
+  /** Для неоплаченного заказа с онлайн-оплатой — срок, после которого он отменяется автоматически */
+  paymentDeadline: string | null;
   createdAt: string;
 }
 

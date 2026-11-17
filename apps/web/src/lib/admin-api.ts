@@ -109,6 +109,15 @@ export interface PromoCodeInput {
   expiresAt: string | null;
 }
 
+export interface AdminReview {
+  id: string;
+  rating: number;
+  text: string;
+  createdAt: string;
+  user: { id: string; email: string; name: string | null };
+  product: { id: string; title: string; slug: string };
+}
+
 export interface AdminUser {
   id: string;
   email: string;
@@ -235,6 +244,10 @@ export const adminApi = {
       body: JSON.stringify(data),
     }),
   deletePromoCode: (id: string) => request(`/admin/promo-codes/${id}`, { method: 'DELETE' }),
+
+  listReviews: (params?: PaginationParams) =>
+    request<PaginatedResult<AdminReview>>(`/admin/reviews${toQueryString(params)}`),
+  deleteReview: (id: string) => request(`/admin/reviews/${id}`, { method: 'DELETE' }),
 
   listUsers: (params?: PaginationParams) =>
     request<PaginatedResult<AdminUser>>(`/admin/users${toQueryString(params)}`),

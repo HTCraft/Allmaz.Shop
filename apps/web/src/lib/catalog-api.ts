@@ -26,6 +26,8 @@ export interface Product {
   stock: number;
   category: Category | null;
   media: ProductMedia[];
+  /** Есть в ответах каталога и страницы товара; в других списках может отсутствовать */
+  rating?: { average: number | null; count: number };
 }
 
 export interface ProductListResponse {

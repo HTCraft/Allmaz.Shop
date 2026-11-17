@@ -20,11 +20,11 @@ export class YookassaService {
     // Публичные тестовые креды ЮKassa для самостоятельного тестирования —
     // см. https://github.com/yoomoney/yookassa-github-docs. Замени в .env
     // на свои боевые/тестовые значения из личного кабинета, когда заведёшь аккаунт.
-    return process.env.YOOKASSA_SHOP_ID || '54401';
+    return process.env['YOOKASSA_SHOP_ID'] || '54401';
   }
 
   private get secretKey() {
-    return process.env.YOOKASSA_SECRET_KEY || 'test_Fh8hUAVVBGUGbjmlzba6TB0iyUbos_lueTHE-axOwM0';
+    return process.env['YOOKASSA_SECRET_KEY'] || 'test_Fh8hUAVVBGUGbjmlzba6TB0iyUbos_lueTHE-axOwM0';
   }
 
   private get authHeader() {

@@ -8,6 +8,7 @@ dist/
 build/
 .next/
 out/
+docs/
 
 # Env
 .env
@@ -32,3 +33,6 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+*.zip
+prompt*.*
+

@@ -1,3 +1,4 @@
+import StarRating from '../../../components/StarRating';
 import Link from 'next/link';
 import {
   getCategories,
@@ -119,6 +120,15 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
                       <span className="badge text-bg-light mb-2">
                         {product.category.name}
                       </span>
+                    )}
+                    {product.rating && product.rating.count > 0 && (
+                      <div className="mb-1">
+                        <StarRating
+                          value={product.rating.average}
+                          count={product.rating.count}
+                          size="0.9em"
+                        />
+                      </div>
                     )}
                     <p className="card-text fw-bold">{formatPrice(product.priceCents)}</p>
                     {product.stock === 0 && (

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  BadGatewayException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -12,8 +13,15 @@ import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
 import { AdminPaginationQueryDto, buildPagination } from '../dto/pagination.dto';
 import { resolveMediaUrl } from '../../media/resolve-media-url';
-
-const UPLOADS_DIR = join(process.cwd(), 'uploads');
+import { UPLOADS_DIR } from '../../media/uploads-dir';
+import {
+  RemoteStorageError,
+  deleteFromRemoteStorage,
+  isRemoteStorageEnabled,
+  isRemoteUrl,
+  removeLocalFile,
+  uploadToRemoteStorage,
+} from '../../media/remote-storage';
 
 const MEDIA_SELECT = {
   id: true,
@@ -174,6 +182,23 @@ export class AdminProductsService {
       throw new BadRequestException('Файл не передан');
     }
 
+    // Внешнее хранилище: загружаем файл туда, временную копию на диске удаляем
+    let url = `/uploads/${file.filename}`;
+    if (isRemoteStorageEnabled()) {
+      try {
+        url = await uploadToRemoteStorage(file);
+      } catch (err) {
+        if (err instanceof RemoteStorageError) {
+          throw err.quotaExceeded
+            ? new BadRequestException('Хранилище файлов заполнено')
+            : new BadGatewayException(err.message);
+        }
+        throw err;
+      } finally {
+        await removeLocalFile(file.path);
+      }
+    }
+
     const maxPosition = await prisma.productMedia.aggregate({
       where: { productId },
       _max: { position: true },
@@ -185,7 +210,7 @@ export class AdminProductsService {
       data: {
         productId,
         type,
-        url: `/uploads/${file.filename}`,
+        url,
         filename: file.originalname,
         position: (maxPosition._max.position ?? -1) + 1,
       },
@@ -205,8 +230,12 @@ export class AdminProductsService {
     return { deleted: true };
   }
 
-  /** Удаляет физический файл из uploads/ по относительному url ("/uploads/xxx.jpg") */
+  /** Удаляет файл: из внешнего хранилища (ссылка CDN) или из uploads/ ("/uploads/xxx.jpg") */
   private async deleteUploadedFile(relativeUrl: string) {
+    if (isRemoteUrl(relativeUrl)) {
+      if (isRemoteStorageEnabled()) await deleteFromRemoteStorage(relativeUrl);
+      return;
+    }
     if (!relativeUrl.startsWith('/uploads/')) return;
     const filePath = join(UPLOADS_DIR, relativeUrl.replace('/uploads/', ''));
     try {

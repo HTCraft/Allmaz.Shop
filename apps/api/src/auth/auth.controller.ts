@@ -51,7 +51,7 @@ export class AuthController {
   @Post('logout')
   @HttpCode(200)
   logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie(COOKIE_NAME);
+    res.clearCookie(COOKIE_NAME, this.cookieOptions());
     return { message: 'Вы вышли из аккаунта' };
   }
 
@@ -119,12 +119,23 @@ export class AuthController {
     return this.authService.resetPassword(dto);
   }
 
-  private setAuthCookie(res: Response, token: string) {
-    res.cookie(COOKIE_NAME, token, {
+  /**
+   * COOKIE_DOMAIN (например, .allmaz.shop) нужен, когда сайт и API живут на разных
+   * поддоменах: тогда cookie, выданная API, доходит и до Next.js (серверный рендеринг
+   * проверяет авторизацию по ней). Локально не задаётся.
+   * Параметры при удалении cookie должны совпадать с параметрами при установке.
+   */
+  private cookieOptions() {
+    return {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: COOKIE_MAX_AGE_MS,
-    });
+      sameSite: 'lax' as const,
+      secure: process.env['NODE_ENV'] === 'production',
+      domain: process.env['COOKIE_DOMAIN'] || undefined,
+      path: '/',
+    };
+  }
+
+  private setAuthCookie(res: Response, token: string) {
+    res.cookie(COOKIE_NAME, token, { ...this.cookieOptions(), maxAge: COOKIE_MAX_AGE_MS });
   }
 }

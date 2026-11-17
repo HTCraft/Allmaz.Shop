@@ -4,10 +4,22 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { MailService } from '../mail/mail.service';
 import { PaymentsService } from '../payments/payments.service';
 import { PromoCodesService } from '../promo-codes/promo-codes.service';
+import { unpaidOrderTtlMs } from '../order-lifecycle/unpaid-order-ttl';
 
 const ORDER_INCLUDE = {
   items: { orderBy: { id: 'asc' as const } },
 };
+
+/** Для неоплаченного заказа с онлайн-оплатой добавляет срок, до которого его нужно оплатить */
+function withPaymentDeadline<T extends { status: string; paymentMethod: string; createdAt: Date }>(
+  order: T,
+) {
+  const deadline =
+    order.status === 'PENDING' && order.paymentMethod === 'CARD'
+      ? new Date(order.createdAt.getTime() + unpaidOrderTtlMs())
+      : null;
+  return { ...order, paymentDeadline: deadline };
+}
 
 @Injectable()
 export class OrdersService {
@@ -96,11 +108,23 @@ export class OrdersService {
         include: ORDER_INCLUDE,
       });
 
+      // Резервируем товар атомарно: списание проходит, только если остатка хватает на момент
+      // записи. Проверка выше — лишь быстрый отказ; без этого условия два одновременных заказа
+      // на последнюю единицу уводили бы остаток в минус. Ошибка откатывает всю транзакцию.
       for (const item of cart.items) {
-        await tx.product.update({
-          where: { id: item.productId },
+        const reserved = await tx.product.updateMany({
+          where: { id: item.productId, stock: { gte: item.quantity } },
           data: { stock: { decrement: item.quantity } },
         });
+        if (reserved.count === 0) {
+          const fresh = await tx.product.findUnique({
+            where: { id: item.productId },
+            select: { stock: true },
+          });
+          throw new BadRequestException(
+            `Товара «${item.product.title}» осталось только ${fresh?.stock ?? 0} шт.`,
+          );
+        }
       }
 
       await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
@@ -134,15 +158,16 @@ export class OrdersService {
       }
     }
 
-    return { ...order, paymentUrl };
+    return { ...withPaymentDeadline(order), paymentUrl };
   }
 
   async listMyOrders(userId: string) {
-    return prisma.order.findMany({
+    const orders = await prisma.order.findMany({
       where: { userId },
       include: ORDER_INCLUDE,
       orderBy: { createdAt: 'desc' },
     });
+    return orders.map(withPaymentDeadline);
   }
 
   async getMyOrder(userId: string, id: string) {
@@ -151,6 +176,6 @@ export class OrdersService {
       include: ORDER_INCLUDE,
     });
     if (!order) throw new NotFoundException('Заказ не найден');
-    return order;
+    return withPaymentDeadline(order);
   }
 }

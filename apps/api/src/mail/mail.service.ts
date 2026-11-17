@@ -137,7 +137,7 @@ export class MailService implements OnModuleInit {
   private async send(mail: { to: string; subject: string; html: string }): Promise<void> {
     try {
       await this.transporter!.sendMail({
-        from: process.env.SMTP_FROM ?? 'no-reply@ecommerce.local',
+        from: process.env['SMTP_FROM'] ?? 'no-reply@ecommerce.local',
         ...mail,
       });
     } catch (error) {

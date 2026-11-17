@@ -5,6 +5,8 @@ import { serverFetch, isAuthenticated } from '../../../../lib/server-fetch';
 import AddToCartButton from '../../../../components/AddToCartButton';
 import FavoriteButton from '../../../../components/FavoriteButton';
 import ProductGallery from '../../../../components/ProductGallery';
+import StarRating from '../../../../components/StarRating';
+import ReviewsSection from '../../../../components/ReviewsSection';
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -58,9 +60,29 @@ export default async function ProductPage({ params }: ProductPageProps) {
           {product.category && (
             <span className="badge text-bg-light mb-3">{product.category.name}</span>
           )}
+          {product.rating && (
+            <div className="mb-3">
+              {product.rating.count > 0 ? (
+                <a href="#reviews" className="text-decoration-none text-reset">
+                  <StarRating
+                    value={product.rating.average}
+                    count={product.rating.count}
+                    size="1.1em"
+                    showValue
+                  />
+                </a>
+              ) : (
+                <a href="#reviews" className="text-muted small">
+                  Пока нет отзывов
+                </a>
+              )}
+            </div>
+          )}
           <p className="fs-3 fw-bold mb-3">{formatPrice(product.priceCents)}</p>
 
-          {product.stock > 0 ? (
+          {product.stock > 0 && product.stock <= 5 ? (
+            <span className="badge text-bg-warning mb-3">Осталось всего {product.stock} шт.</span>
+          ) : product.stock > 0 ? (
             <span className="badge text-bg-success mb-3">В наличии: {product.stock} шт.</span>
           ) : (
             <span className="badge text-bg-danger mb-3">Нет в наличии</span>
@@ -73,6 +95,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <p className="text-muted small mt-3">Артикул: {product.sku}</p>
         </div>
       </div>
+
+      <ReviewsSection slug={product.slug} />
     </main>
   );
 }

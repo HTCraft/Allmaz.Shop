@@ -56,6 +56,20 @@ export default function PaymentStatusSync({ order }: { order: Order }) {
       ) : (
         <>
           <span>Оплата ещё не подтверждена.</span>
+          {order.paymentDeadline && (
+            <span className="small">
+              Оплатите до{' '}
+              <strong>
+                {new Date(order.paymentDeadline).toLocaleString('ru-RU', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </strong>
+              : неоплаченный заказ отменяется автоматически, а товар возвращается в продажу.
+            </span>
+          )}
           <button
             type="button"
             className="btn btn-sm btn-warning align-self-start"
