@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getProductBySlug, formatPrice } from '../../../../lib/catalog-api';
@@ -7,9 +8,44 @@ import FavoriteButton from '../../../../components/FavoriteButton';
 import ProductGallery from '../../../../components/ProductGallery';
 import StarRating from '../../../../components/StarRating';
 import ReviewsSection from '../../../../components/ReviewsSection';
+import JsonLd from '../../../../components/JsonLd';
+import { excerpt, getSiteName, getSiteUrl } from '../../../../lib/seo';
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug).catch(() => null);
+  if (!product) {
+    return { title: 'Товар не найден', robots: { index: false, follow: false } };
+  }
+
+  const siteName = getSiteName();
+  const description =
+    excerpt(product.description) ??
+    `Купить ${product.title} в ${siteName} по цене ${formatPrice(product.priceCents)}.`;
+  const image = product.media.find((m) => m.type === 'IMAGE')?.url;
+  const canonical = `/catalog/${product.slug}`;
+
+  return {
+    title: product.title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title: product.title,
+      description,
+      url: canonical,
+      images: image ? [{ url: image, alt: product.title }] : undefined,
+    },
+    twitter: {
+      card: image ? 'summary_large_image' : 'summary',
+      title: product.title,
+      description,
+      images: image ? [image] : undefined,
+    },
+  };
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
@@ -29,8 +65,65 @@ export default async function ProductPage({ params }: ProductPageProps) {
     }
   }
 
+  const siteUrl = await getSiteUrl();
+  const productUrl = `${siteUrl}/catalog/${product.slug}`;
+  const images = product.media.filter((m) => m.type === 'IMAGE').map((m) => m.url);
+
+  const productJsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    description: excerpt(product.description, 500) ?? undefined,
+    sku: product.sku,
+    image: images.length > 0 ? images : undefined,
+    category: product.category?.name,
+    url: productUrl,
+    offers: {
+      '@type': 'Offer',
+      url: productUrl,
+      priceCurrency: 'RUB',
+      price: (product.priceCents / 100).toFixed(2),
+      availability:
+        product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
+    },
+  };
+  if (product.rating && product.rating.count > 0 && product.rating.average !== null) {
+    productJsonLd.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: product.rating.average,
+      reviewCount: product.rating.count,
+    };
+  }
+
+  const breadcrumbs = [
+    { name: 'Каталог', url: `${siteUrl}/catalog` },
+    ...(product.category
+      ? [
+          {
+            name: product.category.name,
+            url: `${siteUrl}/catalog?category=${encodeURIComponent(product.category.slug)}`,
+          },
+        ]
+      : []),
+    { name: product.title, url: productUrl },
+  ];
+
   return (
     <main className="py-4">
+      <JsonLd data={productJsonLd} />
+      <JsonLd
+        data={{
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: breadcrumbs.map((b, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            name: b.name,
+            item: b.url,
+          })),
+        }}
+      />
       <nav aria-label="breadcrumb">
         <ol className="breadcrumb">
           <li className="breadcrumb-item">

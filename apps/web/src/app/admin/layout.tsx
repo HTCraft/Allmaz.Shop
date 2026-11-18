@@ -6,7 +6,8 @@ import { serverFetch } from '../../lib/server-fetch';
 import AdminSidebarToggle from '../../components/AdminSidebarToggle';
 
 export const metadata: Metadata = {
-  title: 'Админ-панель — E-commerce',
+  title: 'Админ-панель',
+  robots: { index: false, follow: false },
 };
 
 async function requireAdmin() {

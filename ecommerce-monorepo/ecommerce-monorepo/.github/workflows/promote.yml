@@ -1,0 +1,26 @@
+name: Promote to production
+
+# После успешного CI на main переносим этот коммит в ветку production.
+# RelaxDev следит за веткой production — поэтому на сервер попадает только код, прошедший CI.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      # Без --force: перенос только «вперёд». Если ветка production разошлась с main — упадёт явной ошибкой
+      - name: Обновить ветку production
+        run: git push origin "${{ github.event.workflow_run.head_sha }}:refs/heads/production"

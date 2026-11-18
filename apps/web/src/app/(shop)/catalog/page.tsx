@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import StarRating from '../../../components/StarRating';
 import Link from 'next/link';
 import {
@@ -8,6 +9,7 @@ import {
 import { serverFetch, isAuthenticated } from '../../../lib/server-fetch';
 import FavoriteButton from '../../../components/FavoriteButton';
 import MediaThumbnail from '../../../components/MediaThumbnail';
+import { getSiteName } from '../../../lib/seo';
 
 interface CatalogPageProps {
   searchParams: Promise<{
@@ -16,6 +18,41 @@ interface CatalogPageProps {
     search?: string;
     sort?: string;
   }>;
+}
+
+export async function generateMetadata({ searchParams }: CatalogPageProps): Promise<Metadata> {
+  const params = await searchParams;
+  const page = Math.max(Number(params.page ?? '1') || 1, 1);
+  const siteName = getSiteName();
+
+  let categoryName: string | undefined;
+  if (params.category) {
+    const categories = await getCategories().catch(() => []);
+    categoryName = categories.find((c) => c.slug === params.category)?.name;
+  }
+
+  const search = params.search?.trim();
+  const baseTitle = search ? `Поиск: ${search}` : (categoryName ?? 'Каталог товаров');
+  const title = page > 1 ? `${baseTitle} — страница ${page}` : baseTitle;
+  const description = categoryName
+    ? `${categoryName}: купить в ${siteName}. Актуальные цены, наличие и отзывы покупателей.`
+    : `Каталог товаров ${siteName}: актуальные цены, наличие и отзывы покупателей.`;
+
+  // Каноничный адрес — только категория и страница; поиск и сортировка дублируют содержимое
+  const canonicalParams = new URLSearchParams();
+  if (categoryName && params.category) canonicalParams.set('category', params.category);
+  if (page > 1) canonicalParams.set('page', String(page));
+  const canonical = `/catalog${canonicalParams.size ? `?${canonicalParams.toString()}` : ''}`;
+
+  const isDuplicateVariant = Boolean(search) || (params.sort && params.sort !== 'newest');
+
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    robots: isDuplicateVariant ? { index: false, follow: true } : undefined,
+    openGraph: { title, description, url: canonical },
+  };
 }
 
 export default async function CatalogPage({ searchParams }: CatalogPageProps) {

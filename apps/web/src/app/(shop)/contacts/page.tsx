@@ -1,3 +1,11 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Контакты',
+  description: 'Адрес магазина, телефоны, email и время работы.',
+  alternates: { canonical: '/contacts' },
+};
+
 export default function ContactsPage() {
   return (
     <main className="py-4">

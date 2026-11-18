@@ -28,6 +28,7 @@ export interface Product {
   media: ProductMedia[];
   /** Есть в ответах каталога и страницы товара; в других списках может отсутствовать */
   rating?: { average: number | null; count: number };
+  updatedAt?: string;
 }
 
 export interface ProductListResponse {
@@ -42,6 +43,7 @@ export interface ProductListResponse {
 
 export interface ProductListParams {
   page?: number;
+  limit?: number;
   category?: string;
   search?: string;
   sort?: 'newest' | 'price_asc' | 'price_desc';
@@ -58,6 +60,7 @@ export async function getProducts(
 ): Promise<ProductListResponse> {
   const searchParams = new URLSearchParams();
   if (params.page) searchParams.set('page', String(params.page));
+  if (params.limit) searchParams.set('limit', String(params.limit));
   if (params.category) searchParams.set('category', params.category);
   if (params.search) searchParams.set('search', params.search);
   if (params.sort) searchParams.set('sort', params.sort);

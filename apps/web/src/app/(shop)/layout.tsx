@@ -4,11 +4,22 @@ import Link from 'next/link';
 import AuthNav from '../../components/AuthNav';
 import SearchBar from '../../components/SearchBar';
 import { AuthProvider } from '../../lib/auth-context';
+import { getSiteName, getSiteUrl, isNoIndex } from '../../lib/seo';
 
-export const metadata: Metadata = {
-  title: 'E-commerce',
-  description: 'Интернет-магазин',
-};
+// Адрес и название сайта берутся из окружения на каждом запросе, а не при сборке
+export const dynamic = 'force-dynamic';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const siteName = getSiteName();
+  return {
+    metadataBase: new URL(await getSiteUrl()),
+    title: { default: `${siteName} — интернет-магазин`, template: `%s — ${siteName}` },
+    description: `${siteName}: интернет-магазин с актуальными ценами, наличием и отзывами покупателей.`,
+    applicationName: siteName,
+    openGraph: { siteName, locale: 'ru_RU', type: 'website' },
+    robots: isNoIndex() ? { index: false, follow: false } : undefined,
+  };
+}
 
 // Это отдельный root layout для публичной части сайта (route group (shop)).
 // У /admin — свой собственный root layout (apps/web/src/app/admin/layout.tsx)
@@ -21,6 +32,8 @@ export default function ShopLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const siteName = getSiteName();
+
   return (
     <html lang="ru">
       <head>
@@ -44,7 +57,7 @@ export default function ShopLayout({
             <div className="container d-flex justify-content-between align-items-center">
               <div className="d-flex align-items-center gap-3">
                 <Link href="/" className="navbar-brand mb-0">
-                  E-commerce
+                  {siteName}
                 </Link>
                 <Link href="/catalog" className="nav-link text-light">
                   Каталог

@@ -3,9 +3,9 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { mkdirSync } from 'fs';
 import cookieParser from 'cookie-parser';
+import type { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { UPLOADS_DIR } from './media/uploads-dir';
-
 
 async function bootstrap() {
   if (process.env['NODE_ENV'] === 'production' && !process.env['JWT_SECRET']) {
@@ -22,6 +22,12 @@ async function bootstrap() {
   if (process.env['NODE_ENV'] === 'production') {
     app.set('trust proxy', 1);
   }
+
+  // API отдаёт JSON, индексировать его не нужно; картинки из /uploads оставляем доступными для поиска по изображениям
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (!req.path.startsWith('/uploads')) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    next();
+  });
 
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));

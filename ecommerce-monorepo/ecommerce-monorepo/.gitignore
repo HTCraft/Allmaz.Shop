@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Prisma
+packages/database/prisma/generated/
+
+# Загруженные файлы товаров (изображения/видео) — хранятся на диске сервера,
+# не в git; папка создаётся автоматически при старте API
+apps/api/uploads/
+
+# Logs
+npm-debug.log*
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
