@@ -5,7 +5,8 @@ FROM node:22-bookworm-slim
 # openssl нужен Prisma; ca-certificates — для исходящих HTTPS-запросов (ЮKassa, SMTP)
 RUN apt-get update \
  && apt-get install -y --no-install-recommends openssl ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/* \
+ && NODE_ENV=production npm run build -w apps/web
 
 WORKDIR /app
 
