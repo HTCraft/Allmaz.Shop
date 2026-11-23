@@ -5,8 +5,7 @@ FROM node:22-bookworm-slim
 # openssl нужен Prisma; ca-certificates — для исходящих HTTPS-запросов (ЮKassa, SMTP)
 RUN apt-get update \
  && apt-get install -y --no-install-recommends openssl ca-certificates \
- && rm -rf /var/lib/apt/lists/* \
- && NODE_ENV=production npm run build -w apps/web
+ && rm -rf /var/lib/apt/lists/* 
 
 WORKDIR /app
 
@@ -18,6 +17,7 @@ COPY packages/database/package.json packages/database/
 COPY packages/shared/package.json packages/shared/
 # devDependencies нужны для сборки (TypeScript, Nest CLI, Prisma)
 RUN npm install --include=dev --no-audit --no-fund
+RUN npm run build -w apps/web
 
 COPY . .
 
