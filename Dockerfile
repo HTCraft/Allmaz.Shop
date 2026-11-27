@@ -24,7 +24,10 @@ COPY . .
 ARG NEXT_PUBLIC_API_URL=http://localhost:4000
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
-RUN npm run generate -w packages/database \
+# NODE_ENV=production задаём явно: платформа подставляет в сборку своё значение, и Next.js при нём
+# падает на странице /404 («<Html> should not be imported outside of pages/_document»)
+RUN export NODE_ENV=production \
+ && npm run generate -w packages/database \
  && npm run build:packages \
  && npm run build -w apps/api \
  && npm run build -w apps/web
