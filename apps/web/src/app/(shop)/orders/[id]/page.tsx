@@ -9,6 +9,7 @@ import {
   PAYMENT_METHOD_LABELS,
 } from '../../../../lib/orders-api';
 import PaymentStatusSync from '../../../../components/PaymentStatusSync';
+import RepeatOrderButton from '../../../../components/RepeatOrderButton';
 
 interface OrderPageProps {
   params: Promise<{ id: string }>;
@@ -103,9 +104,10 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
                   <span className="text-muted">Комментарий:</span> {order.comment}
                 </p>
               )}
-              <p className="mb-0 text-muted small">
+              <p className="mb-3 text-muted small">
                 Оформлен {new Date(order.createdAt).toLocaleString('ru-RU')}
               </p>
+              <RepeatOrderButton orderId={order.id} />
             </div>
           </div>
         </div>

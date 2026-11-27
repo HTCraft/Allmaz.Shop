@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { authApi } from '../../../lib/auth-api';
 import { useAuth } from '../../../lib/auth-context';
+import AddressesCard from '../../../components/AddressesCard';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -80,7 +82,22 @@ export default function ProfilePage() {
 
   return (
     <main className="py-4">
-      <h1 className="mb-4">Личный кабинет</h1>
+      <h1 className="mb-3">Личный кабинет</h1>
+
+      <div className="d-flex flex-wrap gap-2 mb-4">
+        <Link href="/orders" className="btn btn-outline-primary">
+          <i className="bi bi-receipt me-1" />
+          Мои заказы
+        </Link>
+        <Link href="/favorites" className="btn btn-outline-primary">
+          <i className="bi bi-heart me-1" />
+          Избранное
+        </Link>
+        <Link href="/cart" className="btn btn-outline-primary">
+          <i className="bi bi-cart me-1" />
+          Корзина
+        </Link>
+      </div>
 
       <div className="row g-4">
         <div className="col-md-6">
@@ -114,6 +131,10 @@ export default function ProfilePage() {
               </form>
             </div>
           </div>
+        </div>
+
+        <div className="col-12 order-md-last">
+          <AddressesCard />
         </div>
 
         <div className="col-md-6">

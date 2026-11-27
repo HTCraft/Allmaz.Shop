@@ -1,14 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { prisma } from '@ecommerce/database';
+import { assertPromoApplicable, calculateDiscount, normalizePromoCode } from './promo-discount';
+
+export { normalizePromoCode };
 
 export type PromoCodeRecord = NonNullable<Awaited<ReturnType<typeof prisma.promoCode.findUnique>>>;
-
-/** Минимальная сумма к оплате после скидки — 1 ₽ (ЮKassa не принимает платёж на 0) */
-const MIN_PAYABLE_CENTS = 100;
-
-export function normalizePromoCode(code: string): string {
-  return code.trim().toUpperCase();
-}
 
 @Injectable()
 export class PromoCodesService {
@@ -17,30 +13,12 @@ export class PromoCodesService {
     promo: Pick<PromoCodeRecord, 'discountType' | 'value'>,
     subtotalCents: number,
   ): number {
-    const raw =
-      promo.discountType === 'PERCENT'
-        ? Math.floor((subtotalCents * promo.value) / 100)
-        : promo.value;
-    const maxDiscount = Math.max(subtotalCents - MIN_PAYABLE_CENTS, 0);
-    return Math.max(Math.min(raw, maxDiscount), 0);
+    return calculateDiscount(promo, subtotalCents);
   }
 
   /** Проверяет применимость промокода; бросает 400 с понятным текстом */
   assertApplicable(promo: PromoCodeRecord | null, subtotalCents: number): PromoCodeRecord {
-    if (!promo || !promo.isActive) {
-      throw new BadRequestException('Промокод не найден или неактивен');
-    }
-    if (promo.expiresAt && promo.expiresAt.getTime() < Date.now()) {
-      throw new BadRequestException('Срок действия промокода истёк');
-    }
-    if (promo.maxUses !== null && promo.usedCount >= promo.maxUses) {
-      throw new BadRequestException('Лимит использований промокода исчерпан');
-    }
-    if (subtotalCents < promo.minOrderCents) {
-      const min = (promo.minOrderCents / 100).toLocaleString('ru-RU');
-      throw new BadRequestException(`Минимальная сумма заказа для этого промокода — ${min} ₽`);
-    }
-    return promo;
+    return assertPromoApplicable(promo, subtotalCents);
   }
 
   /** Проверка по коду и сумме. Сумма передаётся вызывающим (всегда из реальной корзины) */

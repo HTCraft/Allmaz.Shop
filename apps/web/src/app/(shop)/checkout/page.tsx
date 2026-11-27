@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { cartApi, Cart } from '../../../lib/cart-api';
 import { ordersApi, promoApi, PaymentMethod, PromoValidation } from '../../../lib/orders-api';
 import { formatPrice } from '../../../lib/catalog-api';
+import { SavedAddress, addressesApi, MAX_SAVED_ADDRESSES } from '../../../lib/addresses-api';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -18,6 +19,11 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('COD');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Сохранённые адреса из личного кабинета: 'new' — ввести другой адрес
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('new');
+  const [saveAddress, setSaveAddress] = useState(false);
 
   const [promoInput, setPromoInput] = useState('');
   const [promo, setPromo] = useState<PromoValidation | null>(null);
@@ -37,6 +43,34 @@ export default function CheckoutPage() {
       })
       .finally(() => setLoading(false));
   }, [router]);
+
+  // Основной адрес подставляется один раз при открытии страницы; ошибки загрузки не мешают оформлению
+  useEffect(() => {
+    addressesApi
+      .list()
+      .then((list) => {
+        setSavedAddresses(list);
+        const preferred = list.find((a) => a.isDefault) ?? list[0];
+        if (preferred) {
+          setSelectedAddressId(preferred.id);
+          setAddress(preferred.address);
+          setPhone(preferred.phone);
+        }
+      })
+      .catch(() => undefined);
+  }, []);
+
+  function handleSelectAddress(id: string) {
+    setSelectedAddressId(id);
+    const found = savedAddresses.find((a) => a.id === id);
+    if (found) {
+      setAddress(found.address);
+      setPhone(found.phone);
+    } else {
+      setAddress('');
+      setPhone('');
+    }
+  }
 
   async function applyPromo() {
     if (!promoInput.trim()) return;
@@ -70,6 +104,13 @@ export default function CheckoutPage() {
         paymentMethod,
         promoCode: promo?.code,
       });
+
+      // Новый адрес сохраняем в кабинет (необязательно: сбой не должен ломать оформленный заказ)
+      if (saveAddress && selectedAddressId === 'new') {
+        await addressesApi
+          .create({ address: address.trim(), phone: phone.trim() })
+          .catch(() => undefined);
+      }
 
       if (paymentMethod === 'CARD' && order.paymentUrl) {
         // Полный переход на хостед-страницу оплаты ЮKassa — не через router.push,
@@ -118,6 +159,25 @@ export default function CheckoutPage() {
             <div className="card-body">
               <h2 className="h5 mb-3">Данные доставки</h2>
               <form onSubmit={handleSubmit}>
+                {savedAddresses.length > 0 && (
+                  <div className="mb-3">
+                    <label className="form-label">Сохранённые адреса</label>
+                    <select
+                      className="form-select"
+                      value={selectedAddressId}
+                      onChange={(e) => handleSelectAddress(e.target.value)}
+                    >
+                      {savedAddresses.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.label ? `${a.label} — ` : ''}
+                          {a.address.length > 60 ? `${a.address.slice(0, 60)}…` : a.address}
+                          {a.isDefault ? ' (основной)' : ''}
+                        </option>
+                      ))}
+                      <option value="new">Другой адрес…</option>
+                    </select>
+                  </div>
+                )}
                 <div className="mb-3">
                   <label className="form-label">Адрес доставки</label>
                   <textarea
@@ -142,6 +202,20 @@ export default function CheckoutPage() {
                     minLength={5}
                   />
                 </div>
+                {selectedAddressId === 'new' && savedAddresses.length < MAX_SAVED_ADDRESSES && (
+                  <div className="form-check mb-3">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id="save-address"
+                      checked={saveAddress}
+                      onChange={(e) => setSaveAddress(e.target.checked)}
+                    />
+                    <label className="form-check-label" htmlFor="save-address">
+                      Сохранить адрес в личном кабинете
+                    </label>
+                  </div>
+                )}
                 <div className="mb-3">
                   <label className="form-label">Комментарий к заказу (необязательно)</label>
                   <textarea

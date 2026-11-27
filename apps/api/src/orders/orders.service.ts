@@ -5,6 +5,7 @@ import { MailService } from '../mail/mail.service';
 import { PaymentsService } from '../payments/payments.service';
 import { PromoCodesService } from '../promo-codes/promo-codes.service';
 import { unpaidOrderTtlMs } from '../order-lifecycle/unpaid-order-ttl';
+import { repeatQuantity } from './repeat-order';
 
 const ORDER_INCLUDE = {
   items: { orderBy: { id: 'asc' as const } },
@@ -168,6 +169,57 @@ export class OrdersService {
       orderBy: { createdAt: 'desc' },
     });
     return orders.map(withPaymentDeadline);
+  }
+
+  /**
+   * «Повторить заказ»: кладёт товары прошлого заказа в корзину по текущим ценам. Позиции, которых
+   * больше нет или не осталось на складе, пропускаются (с причиной), остальное ограничивается остатком.
+   */
+  async repeatOrder(userId: string, orderId: string) {
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, userId },
+      include: { items: true },
+    });
+    if (!order) throw new NotFoundException('Заказ не найден');
+
+    const cart = await prisma.cart.upsert({ where: { userId }, update: {}, create: { userId } });
+
+    let added = 0;
+    const skipped: Array<{ title: string; reason: string }> = [];
+
+    for (const item of order.items) {
+      const product = await prisma.product.findUnique({ where: { id: item.productId } });
+      if (!product) {
+        skipped.push({ title: item.productTitle, reason: 'товар больше не продаётся' });
+        continue;
+      }
+      if (product.stock <= 0) {
+        skipped.push({ title: item.productTitle, reason: 'нет в наличии' });
+        continue;
+      }
+
+      const existing = await prisma.cartItem.findUnique({
+        where: { cartId_productId: { cartId: cart.id, productId: product.id } },
+      });
+      const { finalQuantity, added: addedQty } = repeatQuantity(
+        existing?.quantity ?? 0,
+        item.quantity,
+        product.stock,
+      );
+      if (addedQty === 0) {
+        skipped.push({ title: item.productTitle, reason: 'в корзине уже максимум по остатку' });
+        continue;
+      }
+
+      await prisma.cartItem.upsert({
+        where: { cartId_productId: { cartId: cart.id, productId: product.id } },
+        update: { quantity: finalQuantity },
+        create: { cartId: cart.id, productId: product.id, quantity: finalQuantity },
+      });
+      added++;
+    }
+
+    return { added, skipped };
   }
 
   async getMyOrder(userId: string, id: string) {

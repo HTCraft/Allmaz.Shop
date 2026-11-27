@@ -33,6 +33,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/allmaz_test
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/allmaz_test
       NEXT_PUBLIC_API_URL: http://localhost:4000
 
     steps:
@@ -59,6 +60,9 @@ jobs:
 
       - name: Миграции применяются на чистую БД
         run: npm run migrate:deploy -w packages/database
+
+      - name: Автотесты API (модульные и с БД)
+        run: npm test
 
       - name: Сборка API
         run: npm run build -w apps/api

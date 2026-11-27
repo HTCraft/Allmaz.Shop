@@ -6,7 +6,9 @@
     "build": "nest build",
     "dev": "nest start --watch",
     "start": "node dist/main.js",
-    "lint": "eslint \"src/**/*.ts\""
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "npm --prefix ../.. run build:packages && tsc -p tsconfig.test.json && node dist-test/test/run.js",
+    "typecheck:test": "tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

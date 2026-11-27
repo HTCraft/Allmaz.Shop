@@ -30,6 +30,12 @@ export class OrdersController {
     return this.ordersService.getMyOrder(req.user.userId, id);
   }
 
+  /** «Повторить заказ»: добавляет товары заказа в корзину */
+  @Post(':id/repeat')
+  repeat(@Req() req: AuthedRequest, @Param('id') id: string) {
+    return this.ordersService.repeatOrder(req.user.userId, id);
+  }
+
   /** (Пере)создаёт платёж ЮKassa для заказа — например, если покупатель закрыл
    *  страницу оплаты и хочет попробовать снова */
   @Post(':id/pay')

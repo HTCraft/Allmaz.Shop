@@ -118,6 +118,32 @@ export interface AdminReview {
   product: { id: string; title: string; slug: string };
 }
 
+export type SalesStatus = 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+
+export interface SalesReport {
+  range: { from: string; to: string; days: number; timezone: string };
+  totals: {
+    revenueCents: number;
+    ordersCount: number;
+    averageCheckCents: number;
+    discountCents: number;
+  };
+  previous: { from: string; to: string; revenueCents: number; ordersCount: number };
+  pending: { count: number; cents: number };
+  cancelled: { count: number; cents: number };
+  byStatus: Record<SalesStatus, { count: number; cents: number }>;
+  daily: Array<{ date: string; revenueCents: number; orders: number }>;
+  topProducts: Array<{ productId: string; title: string; quantity: number; revenueCents: number }>;
+  promoUsage: Array<{ code: string; orders: number; discountCents: number }>;
+  lowStock: Array<{ id: string; title: string; sku: string; stock: number }>;
+}
+
+export interface SalesQuery {
+  days?: number;
+  from?: string;
+  to?: string;
+}
+
 export interface AdminUser {
   id: string;
   email: string;
@@ -193,6 +219,17 @@ function toQueryString(params: PaginationParams = {}): string {
 
 export const adminApi = {
   getStats: () => request<AdminStats>('/admin/stats'),
+  getSalesReport: (query: SalesQuery) => {
+    const qs = new URLSearchParams();
+    if (query.from && query.to) {
+      qs.set('from', query.from);
+      qs.set('to', query.to);
+    } else if (query.days) {
+      qs.set('days', String(query.days));
+    }
+    const suffix = qs.toString();
+    return request<SalesReport>(`/admin/stats/sales${suffix ? `?${suffix}` : ''}`);
+  },
 
   // Товары
   listProducts: (params?: PaginationParams) =>

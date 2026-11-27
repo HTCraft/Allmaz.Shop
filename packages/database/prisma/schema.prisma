@@ -27,8 +27,24 @@ model User {
   cart                     Cart?
   favorites                Favorite[]
   reviews                  Review[]
+  addresses                UserAddress[]
   createdAt                DateTime                   @default(now())
   updatedAt                DateTime                   @updatedAt
+}
+
+/// Сохранённые адреса доставки в личном кабинете (подставляются при оформлении заказа)
+model UserAddress {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  label     String? // «Дом», «Работа»
+  address   String
+  phone     String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model PasswordResetToken {

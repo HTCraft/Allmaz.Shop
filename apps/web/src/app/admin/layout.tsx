@@ -107,6 +107,12 @@ export default async function AdminLayout({
                     </Link>
                   </li>
                   <li className="nav-item">
+                    <Link href="/admin/sales" className="nav-link">
+                      <i className="nav-icon bi bi-graph-up-arrow" />
+                      <p>Аналитика</p>
+                    </Link>
+                  </li>
+                  <li className="nav-item">
                     <Link href="/admin/reviews" className="nav-link">
                       <i className="nav-icon bi bi-chat-square-text" />
                       <p>Отзывы</p>

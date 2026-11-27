@@ -13,6 +13,7 @@ import { CarouselModule } from './carousel/carousel.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { AddressesModule } from './addresses/addresses.module';
 import { PromoCodesModule } from './promo-codes/promo-codes.module';
 import { resolveRootEnvPath } from './env-path';
 
@@ -47,6 +48,7 @@ import { resolveRootEnvPath } from './env-path';
     PaymentsModule,
     PromoCodesModule,
     ReviewsModule,
+    AddressesModule,
   ],
   controllers: [AppController],
   providers: [

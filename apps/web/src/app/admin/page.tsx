@@ -20,7 +20,13 @@ export default async function AdminDashboardPage() {
 
   return (
     <>
-      <h1 className="h3 mb-4">Дашборд</h1>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1 className="h3 mb-0">Дашборд</h1>
+        <Link href="/admin/sales" className="btn btn-outline-primary">
+          <i className="bi bi-graph-up-arrow me-1" />
+          Аналитика продаж
+        </Link>
+      </div>
       <div className="row g-3">
         {cards.map((card) => (
           <div className="col-12 col-sm-6 col-lg-3" key={card.label}>

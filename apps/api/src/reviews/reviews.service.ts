@@ -1,15 +1,10 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { prisma } from '@ecommerce/database';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { authorName } from './author-name';
 
 const PAGE_SIZE = 10;
 
-/** Публично показываем имя, а если его нет — маскированную часть email до @ */
-function authorName(user: { name: string | null; email: string }): string {
-  if (user.name?.trim()) return user.name.trim();
-  const local = user.email.split('@')[0] ?? '';
-  return `${local.slice(0, 2)}***`;
-}
 
 @Injectable()
 export class ReviewsService {

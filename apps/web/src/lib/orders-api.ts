@@ -52,7 +52,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return data as T;
 }
 
+export interface RepeatOrderResult {
+  added: number;
+  skipped: Array<{ title: string; reason: string }>;
+}
+
 export const ordersApi = {
+  repeat: (id: string) =>
+    request<RepeatOrderResult>(`/orders/${id}/repeat`, { method: 'POST' }),
+
   create: (data: {
     shippingAddress: string;
     phone: string;
