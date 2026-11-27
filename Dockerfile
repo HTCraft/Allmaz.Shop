@@ -18,6 +18,8 @@ COPY packages/shared/package.json packages/shared/
 # devDependencies нужны для сборки (TypeScript, Nest CLI, Prisma)
 RUN npm install --include=dev --no-audit --no-fund
 
+ENV NODE_ENV=production
+
 COPY . .
 
 # Адрес API для браузера вшивается в сборку Next.js — передавайте как переменную сборки
