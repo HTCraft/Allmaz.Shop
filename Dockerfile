@@ -32,7 +32,7 @@ RUN export NODE_ENV=production \
  && npm run generate -w packages/database \
  && npm run build:packages \
  && npm run build -w apps/api \
- && npm run build -w apps/web
+ && NODE_ENV=production npm run build -w apps/web
 
 ENV NODE_ENV=production \
     APP=api \
