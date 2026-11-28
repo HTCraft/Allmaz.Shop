@@ -5,6 +5,11 @@ import Script from 'next/script';
 import { serverFetch } from '../../lib/server-fetch';
 import AdminSidebarToggle from '../../components/AdminSidebarToggle';
 
+import RuntimeEnv from '../../components/RuntimeEnv';
+
+// Адрес API подставляется при каждом запросе (RuntimeEnv), а не при сборке
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Админ-панель',
   robots: { index: false, follow: false },
@@ -33,6 +38,7 @@ export default async function AdminLayout({
   return (
     <html lang="ru">
       <head>
+        <RuntimeEnv />
         <link
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"

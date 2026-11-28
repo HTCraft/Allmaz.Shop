@@ -1,6 +1,7 @@
+import { getApiUrl } from './api-url';
 import { cookies } from 'next/headers';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API_URL = getApiUrl();
 
 /**
  * fetch для Server Components/Route Handlers, который пробрасывает

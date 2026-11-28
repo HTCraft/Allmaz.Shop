@@ -1,6 +1,7 @@
+import { getApiUrl } from './api-url';
 import type { OrderStatus, OrderItemData, PaymentMethod } from './orders-api';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API_URL = getApiUrl();
 
 export interface AdminOrder {
   id: string;

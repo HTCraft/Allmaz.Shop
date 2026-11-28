@@ -86,13 +86,14 @@ YOOKASSA_SECRET_KEY=
 Тот же репозиторий, ветка `production`, «Свой Dockerfile», rootDir пустой. Переменные:
 ```env
 APP=web
-NEXT_PUBLIC_API_URL=https://api.allmaz.shop
+API_URL=https://api.allmaz.shop
 SITE_URL=https://allmaz.shop
 SITE_NAME=Allmaz.Shop
 SEO_NOINDEX=true
 ```
-`SITE_URL` и `SITE_NAME` читаются при каждом запросе (пересборка не нужна) и попадают в canonical, Open Graph, `sitemap.xml` и `robots.txt`. `SEO_NOINDEX=true` закрывает сайт от поисковиков (тестовый стенд, период до запуска) — **в день запуска смените на `false` или удалите переменную** и отправьте `https://allmaz.shop/sitemap.xml` в Яндекс Вебмастер и Google Search Console.
-`NEXT_PUBLIC_API_URL` вшивается в сборку: задайте её **до первого деплоя**, а после изменения нажимайте «Пересобрать» (не «Редеплой»). Проверка: в DevTools → Network запросы идут на `https://api.allmaz.shop`, а не на `localhost:4000` и не на `auto-generated-stub-for-build`. Если не так — платформа не передала переменную в Docker-сборку; напишите, переделаю чтение адреса на runtime.
+`API_URL`, `SITE_URL` и `SITE_NAME` читаются **при каждом запросе**, пересборка не нужна: после смены переменной достаточно «Быстрого деплоя» (рестарта). Адрес API сервер кладёт в `<head>` страницы (`window.__ENV`), оттуда его берёт браузер. Так сделано потому, что RelaxDev не передаёт переменные проекта в Docker-сборку, и вшитый при сборке `NEXT_PUBLIC_API_URL` превращался в `localhost:4000` (на сайте — «Failed to fetch»). `NEXT_PUBLIC_API_URL` теперь запасной вариант и необязателен.
+`SITE_URL` и `SITE_NAME` попадают в canonical, Open Graph, `sitemap.xml` и `robots.txt`. `SEO_NOINDEX=true` закрывает сайт от поисковиков (тестовый стенд, период до запуска) — **в день запуска смените на `false` или удалите переменную** и отправьте `https://allmaz.shop/sitemap.xml` в Яндекс Вебмастер и Google Search Console.
+Проверка: в DevTools → Network запросы идут на `https://api.allmaz.shop`, а не на `localhost:4000`.
 До запуска магазина можно закрыть сайт паролем: «Настройки» → «Защита паролем».
 
 ### 3.6. Домены и SSL

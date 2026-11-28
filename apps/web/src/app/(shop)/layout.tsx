@@ -5,6 +5,7 @@ import AuthNav from '../../components/AuthNav';
 import SearchBar from '../../components/SearchBar';
 import { AuthProvider } from '../../lib/auth-context';
 import { getSiteName, getSiteUrl, isNoIndex } from '../../lib/seo';
+import RuntimeEnv from '../../components/RuntimeEnv';
 
 // Адрес и название сайта берутся из окружения на каждом запросе, а не при сборке
 export const dynamic = 'force-dynamic';
@@ -37,6 +38,7 @@ export default function ShopLayout({
   return (
     <html lang="ru">
       <head>
+        <RuntimeEnv />
         {/* AdminLTE 4 (включает Bootstrap 5.3) — единый источник стилей для публичной части */}
         <link
           rel="stylesheet"
